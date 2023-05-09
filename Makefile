@@ -29,6 +29,9 @@ ISO := $(BUILD_DIR)/$(OS_NAME).iso
 
 build: $(ISO)
 
+run-gdb: $(ISO)
+	qemu-system-i386 -s -S -cdrom $(ISO)
+
 run: $(ISO)
 	qemu-system-i386 -cdrom $(ISO)
 
