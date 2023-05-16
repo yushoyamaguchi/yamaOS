@@ -1,0 +1,88 @@
+const VGA_BUFFER_WIDTH: usize = 80;
+const VGA_BUFFER_HIGHT: usize = 25;
+
+pub static mut VGA_BUFFER: VGABuffer = VGABuffer {
+    buffer: [[
+        VGACharacter{
+            character: b' ',
+            color: (ColorCode::Black as u8) << 4 | ColorCode::Black as u8};
+        VGA_BUFFER_WIDTH]; VGA_BUFFER_HIGHT],
+    x_pos: 0,
+    y_pos: 0,
+};
+
+pub enum ColorCode {
+    Black = 0x0,
+    Blue = 0x1,
+    Green = 0x2,
+    Cyan = 0x3,
+    Red = 0x4,
+    Magenta = 0x5,
+    Brown = 0x6,
+    LightGray = 0x7,
+    DarkGray = 0x8,
+    LightBlue = 0x9,
+    LightGreen = 0xa,
+    LightCyan = 0xb,
+    LightRed = 0xc,
+    LightMangenta = 0xd,
+    Yellow = 0xe,
+    White = 0xf,
+}
+
+#[derive(Clone, Copy)]
+struct VGACharacter {
+    character: u8,
+    color: u8,
+}
+
+impl VGACharacter {
+    // VGA Character Attribute
+    // |   7   |   6   |   5   |   4   |  3  |  2  |  1  |  0  |
+    // | blink |    Background color   |    Foreground color   |
+    fn new(character: u8, foreground: ColorCode, background: ColorCode) -> Self {
+        VGACharacter {
+            character: character,
+            color: (background as u8) << 4 | foreground as u8
+        }
+    }
+}
+
+pub struct VGABuffer {
+    buffer: [[VGACharacter; VGA_BUFFER_WIDTH]; VGA_BUFFER_HIGHT],
+    x_pos: usize,
+    y_pos: usize,
+}
+
+impl VGABuffer{
+    pub fn new_line(&mut self) {
+        if self.y_pos<VGA_BUFFER_HIGHT-1 {
+            self.x_pos = 0;
+            self.y_pos += 1;
+        }
+        else {
+            self.scroll_one_line();
+        }
+    }
+
+    pub fn scroll_one_line(&mut self) {
+        for y in 0..VGA_BUFFER_HIGHT-1 {
+            for x in 0..VGA_BUFFER_WIDTH {
+                self.buffer[y][x] = self.buffer[y+1][x];
+            }
+        }
+        self.clear_line(VGA_BUFFER_HIGHT-1);
+        self.x_pos = 0;
+        self.y_pos = VGA_BUFFER_HIGHT-1;
+    }
+
+    pub fn clear_line(&mut self, line: usize) {
+        let blank = VGACharacter::new(b' ', ColorCode::Black, ColorCode::Black);
+        for x in 0..VGA_BUFFER_WIDTH {
+            self.buffer[line][x] = blank;
+        }
+    }
+}
+
+
+

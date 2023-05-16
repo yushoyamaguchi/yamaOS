@@ -1,6 +1,8 @@
 #![feature(panic_handler)]
 #![no_std]
 
+mod drivers;
+use drivers::vga::VGA_BUFFER;
 use core::panic::PanicInfo;
 
 #[panic_handler]
