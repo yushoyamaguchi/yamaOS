@@ -82,6 +82,23 @@ impl VGABuffer{
             self.buffer[line][x] = blank;
         }
     }
+
+    pub fn write_byte(&mut self, byte: u8) {
+        match byte {
+            b'\n' => self.new_line(),
+            byte => {
+                if self.x_pos<VGA_BUFFER_WIDTH {
+                    self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::Black);
+                    self.x_pos += 1;
+                }
+                else {
+                    self.new_line();
+                    self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::Black);
+                    self.x_pos += 1;
+                }
+            }
+        }
+    }
 }
 
 
