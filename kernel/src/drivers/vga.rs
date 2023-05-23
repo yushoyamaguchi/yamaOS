@@ -1,3 +1,5 @@
+use core::fmt;
+
 const VGA_BUFFER_WIDTH: usize = 80;
 const VGA_BUFFER_HIGHT: usize = 25;
 
@@ -104,6 +106,46 @@ impl VGABuffer{
         for byte in s.bytes() {
             self.write_byte(byte);
         }
+    }
+
+    pub fn clear(&mut self) -> () {
+        for y in 0..VGA_BUFFER_HIGHT {
+            for x in 0..VGA_BUFFER_WIDTH {
+                self.buffer[y][x] = VGACharacter::new(b' ', ColorCode::Black, ColorCode::Black);
+            }
+        }
+        self.x_pos = 0;
+        self.y_pos = 0;
+    }
+
+    pub fn print(&mut self, args: fmt::Arguments) -> () {
+        use core::fmt::Write;
+        self.write_fmt(args).unwrap();
+        self.flush();
+    }
+
+    pub fn flush(&mut self) -> () {//構造体の内容をVGAを通して画面に出力
+        let vga_text_buffer = 0xb8000 as *mut u8;
+        for y in 0..VGA_BUFFER_HIGHT {
+            for x in 0..VGA_BUFFER_WIDTH {
+                unsafe {
+                    *vga_text_buffer.offset((x + y * VGA_BUFFER_WIDTH) as isize * 2) =
+                        self.buffer[y][x].character;
+                    *vga_text_buffer.offset((x + y * VGA_BUFFER_WIDTH) as isize * 2 + 1) =
+                        self.buffer[y][x].color;
+                }
+            }
+        }
+    }
+}
+
+
+impl fmt::Write for VGABuffer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        for byte in s.bytes() {
+            self.write_byte(byte)
+        }
+        Ok(())
     }
 }
 
