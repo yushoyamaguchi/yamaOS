@@ -7,15 +7,18 @@ TARGET_DIR := target
 DEBUG_BUILD_DIR :=  $(TARGET_DIR)/$(CUSTOM_TARGET)/debug/
 
 # Files
-SRCS := $(SRC_DIR)/lib.rs
+SRCS := $(SRC_DIR)/lib.rs $(SRC_DIR)/drivers/*.rs
 
-# COMMAND
-XARGO_FLAG := --target $(CUSTOM_TARGET)
+
 
 .PHONY: build clean
 
+CARGO_OPTIONS := -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+CARGO_TARGET := --target $(CUSTOM_TARGET).json
+CARGO_OPTIONS += $(CARGO_TARGET)
+
 build: $(SRCS)
-	xargo build $(XARGO_FLAG)
+	cargo build $(CARGO_OPTIONS)
 
 clean:
 	rm -rf $(TARGET_DIR)
