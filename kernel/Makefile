@@ -13,8 +13,12 @@ SRCS := $(SRC_DIR)/lib.rs $(SRC_DIR)/drivers/*.rs
 
 .PHONY: build clean
 
+CARGO_OPTIONS := -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+CARGO_TARGET := --target $(CUSTOM_TARGET).json
+CARGO_OPTIONS += $(CARGO_TARGET)
+
 build: $(SRCS)
-	cargo build
+	cargo build $(CARGO_OPTIONS)
 
 clean:
 	rm -rf $(TARGET_DIR)

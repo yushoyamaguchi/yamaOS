@@ -99,6 +99,12 @@ impl VGABuffer{
             }
         }
     }
+
+    pub fn write_str(&mut self, s: &str) -> () {
+        for byte in s.bytes() {
+            self.write_byte(byte);
+        }
+    }
 }
 
 
