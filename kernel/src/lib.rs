@@ -4,6 +4,9 @@
 mod drivers;
 #[macro_use]
 mod printk;
+mod x86;
+mod kbc;
+
 use drivers::vga::VGA_BUFFER;
 use core::panic::PanicInfo;
 
@@ -17,5 +20,8 @@ pub extern "C" fn panic(_info: &PanicInfo) -> ! {
 pub extern fn kernel_main() -> ! {
     printk!("Hello {}", "World");
     printk!("{} + {} = {}", 1, 2, 3);
+    while 1==1  {
+        let c = kbc::getc();
+    }
     loop {}
 }
