@@ -22,6 +22,7 @@ pub extern fn kernel_main() -> ! {
     printk!("{} + {} = {}", 1, 2, 3);
     while 1==1  {
         let c = kbc::getc();
+        printk!("{}", c);
     }
     loop {}
 }
