@@ -1,5 +1,3 @@
-#![feature(panic_handler)]
-#![feature(global_asm)]
 #![no_std]
 
 mod drivers;
