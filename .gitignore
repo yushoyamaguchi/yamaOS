@@ -5,3 +5,4 @@ build/*
 .vscode/*
 *.lock
 local_gdb_init*
+disassemble/*
