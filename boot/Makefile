@@ -1,5 +1,5 @@
-NASM := nasm
-NASM_FLAG := -f elf32
+GAS := as
+GAS_FLAG := --32
 
 SRCS := $(wildcard *.S)
 OBJS := $(patsubst %.S, %.o, $(SRCS))
@@ -9,7 +9,7 @@ OBJS := $(patsubst %.S, %.o, $(SRCS))
 build: $(OBJS)
 
 %.o: %.S
-	$(NASM) $(NASM_FLAG) -o $@ $<
+	$(GAS) $(GAS_FLAG) -o $@ $<
 
 clean:
 	rm -rf $(OBJS)

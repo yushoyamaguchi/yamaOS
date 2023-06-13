@@ -1,13 +1,13 @@
-section .multiboot_header
+.section .multiboot_header
 
 header_start:
-    dd 0xe85250d6                   ; magic number
-    dd 0                            ; architecture (i386)
-    dd header_end - header_start    ; header size
-    dd 0x100000000 - (0xe85250d6 + 0 + (header_end - header_start))    ; checksum
+    .int 0xe85250d6                   # magic number
+    .int 0                            # architecture (i386)
+    .int header_end - header_start    # header size
+    .int 0x100000000 - (0xe85250d6 + 0 + (header_end - header_start))    # checksum
 
-    ; required end tag
-    dw 0    ; type
-    dw 0    ; flags
-    dd 8    ; size
+    # required end tag
+    .short 0    # type
+    .short 0    # flags
+    .int 8    # size
 header_end:
