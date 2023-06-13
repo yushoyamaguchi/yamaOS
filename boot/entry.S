@@ -1,6 +1,13 @@
+.set KERNBASE,   0x80000000  # First kernel virtual address
+
 .section .text
 
 .extern kernel_main
+
+.globl		_start
+_start = (entry-KERNBASE)
+
+.globl entry
 
 entry:
     movl $0x2f6f2f4c, 0xb8000
