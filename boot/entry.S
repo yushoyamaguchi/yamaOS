@@ -1,14 +1,13 @@
-section .text
-bits 32
+.section .text
 
-extern kernel_main
+.extern kernel_main
 
 entry:
-    mov dword [0xb8000], 0x2f6f2f4c
-    mov dword [0xb8004], 0x2f642f61
-    mov dword [0xb8008], 0x2f642f65
-    mov dword [0xb800c], 0x2f212f21
-    ; like xv6
-    mov eax, kernel_main
-    jmp eax
+    movl $0x2f6f2f4c, 0xb8000
+    movl $0x2f642f61, 0xb8004
+    movl $0x2f642f65, 0xb8008
+    movl $0x2f212f21, 0xb800c
+    # like xv6
+    movl $kernel_main, %eax
+    jmp *%eax
     hlt
