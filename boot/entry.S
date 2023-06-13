@@ -3,7 +3,7 @@ bits 32
 
 extern kernel_main
 
-boot:
+entry:
     mov dword [0xb8000], 0x2f6f2f4c
     mov dword [0xb8004], 0x2f642f61
     mov dword [0xb8008], 0x2f642f65
