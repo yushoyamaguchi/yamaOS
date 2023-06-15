@@ -1,22 +1,13 @@
 
 SECTIONS {
-    . = 1M;
+    . = 0x80100000;
 
-    .text : ALIGN(4K) {
+    .text : AT(0x100000) {
         KEEP(*(.multiboot_header))
         *(.text)
     }
 
     .rodata : ALIGN(4K) {
         *(.rodata)
-    }
-
-    .data : ALIGN(4K) {
-        *(.data)
-    }
-
-    .bss : ALIGN(4K) {
-        *(.bss)
-        *(COMMON)
     }
 }

@@ -5,5 +5,6 @@ entry_kernel:
     movl $0x2f642f61, 0xb8004
     movl $0x2f642f65, 0xb8008
     movl $0x2f212f21, 0xb800c
+    hlt
     movl $kernel_main, %eax
     jmp *%eax
