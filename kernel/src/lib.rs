@@ -1,4 +1,3 @@
-#![feature(panic_handler)]
 #![no_std]
 
 mod drivers;
@@ -9,6 +8,7 @@ mod kbc;
 
 use drivers::vga::VGA_BUFFER;
 use core::panic::PanicInfo;
+use core::arch::global_asm;
 
 #[panic_handler]
 #[no_mangle]
@@ -16,8 +16,10 @@ pub extern "C" fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
+global_asm!(include_str!("entry.S"));
+
 #[no_mangle]
-pub extern fn kernel_main() -> ! {
+pub extern "C" fn kernel_main() -> ! {
     printk!("Hello {}", "World");
     printk!("{} + {} = {}", 1, 2, 3);
     while 1==1  {
