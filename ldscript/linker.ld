@@ -1,6 +1,6 @@
 
 SECTIONS {
-    . = 0xf0100000;
+    . = 0x80100000;
 
     .text : AT(0x100000) {
         KEEP(*(.multiboot_header))

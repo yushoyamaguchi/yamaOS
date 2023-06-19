@@ -1,4 +1,4 @@
-.equ KERNBASE, 0xf0000000
+.equ KERNBASE, 0x80000000
 .section .text
 
 .extern entry_kernel
