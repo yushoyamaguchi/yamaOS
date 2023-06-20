@@ -8,6 +8,8 @@ SECTIONS {
     }
 
     .rodata : {
+		. = ALIGN(4096);
+		*(.rodata.entrypgdir)
         *(.rodata .rodata.* .gnu.linkonce.r.*)
     }
 

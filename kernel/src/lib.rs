@@ -13,7 +13,11 @@ use core::panic::PanicInfo;
 use core::arch::global_asm;
 use mmu::NPDENTRIES;
 use mmu::PDXSHIFT;
+use mmu::PTE_P;
+use mmu::PTE_W;
+use mmu::PTE_PS;
 use memlayout::PageDirEntry;
+use memlayout::KERNBASE;
 
 macro_rules! assigned_array {
     ($def:expr; $len:expr; $([$idx:expr] = $val:expr),*) => {{
@@ -35,9 +39,9 @@ pub extern "C" fn panic(_info: &PanicInfo) -> ! {
 pub static entrypgdir: [PageDirEntry; NPDENTRIES] = assigned_array![
     0; NPDENTRIES;
     // Map VA's [0, 4MB) to PA's [0, 4MB)
-    [0] = 0x000 | 0x001 | 0x002 | 0x080,
+    [0] = 0x000 | PTE_P | PTE_W | PTE_PS,
     // Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
-    [0x80000000 >> PDXSHIFT] = 0x000 | 0x001 | 0x002 | 0x080
+    [(KERNBASE as usize) >> PDXSHIFT] = 0x000 | 0x001 | 0x002 | 0x080
     // 0x80 means the size of the page is 4MiB
 ];
 
