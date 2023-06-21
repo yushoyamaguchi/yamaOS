@@ -1,11 +1,10 @@
 #![no_std]
 
 mod drivers;
-#[macro_use]
-mod printk;
 mod x86;
 mod mmu;
 mod memlayout;
+#[macro_use]
 mod console;
 
 use drivers::vga::VGA_BUFFER;
