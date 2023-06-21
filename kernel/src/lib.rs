@@ -9,7 +9,6 @@ mod memlayout;
 mod console;
 
 use drivers::vga::VGA_BUFFER;
-use drivers::kbc::*;
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 use mmu::*;
@@ -50,7 +49,7 @@ pub extern "C" fn kernel_main() -> ! {
     printk!("Hello {}", "World");
     printk!("{} + {} = {}", 1, 2, 3);
     while 1==1  {
-        let c = getc();
+        let c = cons_getc();
         printk!("{}", c);
     }
     loop {}
