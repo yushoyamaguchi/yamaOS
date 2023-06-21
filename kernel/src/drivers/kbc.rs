@@ -1,4 +1,4 @@
-use crate::x86::read_io_port;
+use crate::x86::inb;
 
 const KBC_DATA_ADDR: u16 = 0x0060;
 const KBC_DATA_BIT_IS_BRAKE: u8 = 0x80;
@@ -30,8 +30,8 @@ const KEYMAP: [char; 128] = [
 
 fn get_kbc_data() -> u8 {
     // Wait until the OBF bit is set in the status register.
-    while  read_io_port(KBC_STATUS_ADDR)  & KBC_STATUS_BIT_OBF == 0 {}
-    read_io_port(KBC_DATA_ADDR) 
+    while  inb(KBC_STATUS_ADDR)  & KBC_STATUS_BIT_OBF == 0 {}
+    inb(KBC_DATA_ADDR) 
 }
 
 fn get_keycode() -> u8 {
