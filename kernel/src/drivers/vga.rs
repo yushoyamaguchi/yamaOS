@@ -1,4 +1,5 @@
 use core::fmt;
+use crate::x86::*;
 
 const VGA_BUFFER_WIDTH: usize = 80;
 const VGA_BUFFER_HIGHT: usize = 25;
@@ -57,6 +58,15 @@ pub struct VGABuffer {
 }
 
 impl VGABuffer{
+    pub fn clear_screen(&mut self) {
+        // 左上のチカチカを消す
+        unsafe {
+            let port = 0x3D4;
+            outb(port, 0x0A);
+            let value = inb(port + 1);
+            outb(port + 1, value | 0x20);
+        }
+    }
     pub fn new_line(&mut self) {
         if self.y_pos<VGA_BUFFER_HIGHT-1 {
             self.x_pos = 0;
@@ -149,5 +159,10 @@ impl fmt::Write for VGABuffer {
     }
 }
 
+pub fn vga_init() {
+    unsafe {
+        VGA_BUFFER.clear_screen();
+    }
+}
 
 

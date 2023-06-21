@@ -7,17 +7,14 @@ mod x86;
 mod kbc;
 mod mmu;
 mod memlayout;
+mod console;
 
 use drivers::vga::VGA_BUFFER;
 use core::panic::PanicInfo;
 use core::arch::global_asm;
-use mmu::NPDENTRIES;
-use mmu::PDXSHIFT;
-use mmu::PTE_P;
-use mmu::PTE_W;
-use mmu::PTE_PS;
-use memlayout::PageDirEntry;
-use memlayout::KERNBASE;
+use mmu::*;
+use memlayout::*;
+use console::*;
 
 macro_rules! assigned_array {
     ($def:expr; $len:expr; $([$idx:expr] = $val:expr),*) => {{
@@ -49,6 +46,7 @@ global_asm!(include_str!("entry.S"));
 
 #[no_mangle]
 pub extern "C" fn kernel_main() -> ! {
+    cons_init();
     printk!("Hello {}", "World");
     printk!("{} + {} = {}", 1, 2, 3);
     while 1==1  {
