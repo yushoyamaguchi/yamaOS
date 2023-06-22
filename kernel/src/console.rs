@@ -1,7 +1,6 @@
 use crate::drivers::vga::*;
 use crate::drivers::kbc::*;
 use crate::drivers::uart::*;
-use crate::drivers::uart::UART;
 
 
 macro_rules! print {

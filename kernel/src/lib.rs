@@ -4,6 +4,7 @@ mod drivers;
 mod x86;
 mod mmu;
 mod memlayout;
+mod monitor;
 #[macro_use]
 mod console;
 
@@ -14,6 +15,7 @@ use core::arch::global_asm;
 use mmu::*;
 use memlayout::*;
 use console::*;
+use monitor::*;
 
 macro_rules! assigned_array {
     ($def:expr; $len:expr; $([$idx:expr] = $val:expr),*) => {{
@@ -46,11 +48,9 @@ global_asm!(include_str!("entry.S"));
 #[no_mangle]
 pub extern "C" fn kernel_main() -> ! {
     cons_init();
-    printk!("Hello {}", "World");
-    printk!("{} + {} = {}", 1, 2, 3);
-    while 1==1  {
-        let c = cons_getc();
-        cons_putc(c);
-    }
+    let test_str="This is yamaOS";
+    printk!("Hello World!");
+    printk!("{}", test_str);
+    monitor();
     loop {}
 }
