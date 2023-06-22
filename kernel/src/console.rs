@@ -23,6 +23,13 @@ pub fn cons_init() {
     uart_init();
 }
 
+pub fn cons_putc(c: char) {
+    unsafe{
+        VGA_BUFFER.putc(c);
+        UART.putc(c);
+    }
+}
+
 pub fn cons_getc() -> char {
     getc()
 }

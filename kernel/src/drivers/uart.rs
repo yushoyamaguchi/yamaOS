@@ -101,6 +101,10 @@ impl Uart {
         outb(COM1, value) 
     }
 
+    pub fn putc(&mut self, c: char) {
+        self.write_byte(c as u8)
+    }
+
     fn is_transmit_empty() -> bool {
         unsafe { Register::Lsr.read() & 0x20 == 0 }
     }

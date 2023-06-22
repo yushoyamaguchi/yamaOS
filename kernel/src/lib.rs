@@ -50,7 +50,7 @@ pub extern "C" fn kernel_main() -> ! {
     printk!("{} + {} = {}", 1, 2, 3);
     while 1==1  {
         let c = cons_getc();
-        printk!("{}", c);
+        cons_putc(c);
     }
     loop {}
 }

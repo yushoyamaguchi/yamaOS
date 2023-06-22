@@ -14,7 +14,7 @@ pub static mut VGA_BUFFER: VGABuffer = VGABuffer {
     y_pos: 0,
 };
 
-pub enum ColorCode {
+enum ColorCode {
     Black = 0x0,
     Blue = 0x1,
     Green = 0x2,
@@ -110,6 +110,11 @@ impl VGABuffer{
                 }
             }
         }
+    }
+
+    pub fn putc(&mut self, c: char) {
+        self.write_byte(c as u8);
+        self.flush();
     }
 
     pub fn write_str(&mut self, s: &str) -> () {
