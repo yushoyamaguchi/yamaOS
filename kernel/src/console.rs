@@ -1,12 +1,14 @@
 use crate::drivers::vga::*;
 use crate::drivers::kbc::*;
 use crate::drivers::uart::*;
+use crate::drivers::uart::UART;
 
 
 macro_rules! print {
     ($($arg:tt)*) => ({
         unsafe {
             VGA_BUFFER.print(format_args!($($arg)*));
+            UART.print(format_args!($($arg)*));
         }
     });
 }

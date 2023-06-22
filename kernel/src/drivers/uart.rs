@@ -1,51 +1,128 @@
+use core::fmt;
 use crate::x86::*;
+
+pub static mut UART: Uart = Uart{
+    serial_exists: false,
+};
 
 const COM1: u16 = 0x3F8;
 
-const COM_RX: u16 = 0;  // In: Receive buffer (DLAB=0)
-const COM_TX: u16 = 0;  // Out: Transmit buffer (DLAB=0)
-const COM_DLL: u16 = 0;  // Out: Divisor Latch Low (DLAB=1)
-const COM_DLM: u16 = 1;  // Out: Divisor Latch High (DLAB=1)
-const COM_IER: u16 = 1;  // Out: Interrupt Enable Register
-const COM_IER_RDI: u8 = 0x01;  // Enable receiver data interrupt
-const COM_IIR: u16 = 2;  // In: Interrupt ID Register
-const COM_FCR: u16 = 2;  // Out: FIFO Control Register
-const COM_LCR: u16 = 3;  // Out: Line Control Register
-const COM_LCR_DLAB: u8 = 0x80;  // Divisor latch access bit
-const COM_LCR_WLEN8: u8 = 0x03;  // Wordlength: 8 bits
-const COM_MCR: u16 = 4;  // Out: Modem Control Register
-const COM_MCR_RTS: u8 = 0x02;  // RTS complement
-const COM_MCR_DTR: u8 = 0x01;  // DTR complement
-const COM_MCR_OUT2: u8 = 0x08;  // Out2 complement
-const COM_LSR: u16 = 5;  // In: Line Status Register
-const COM_LSR_DATA: u8 = 0x01;  // Data available
-const COM_LSR_TXRDY: u8 = 0x20;  // Transmit buffer avail
-const COM_LSR_TSRE: u8 = 0x40; 
+// ref. https://en.wikibooks.org/wiki/Serial_Programming/8250_UART_Programming#UART_Registers
+// TODO: validation(e.g. DLAB, read or write only)
+enum Register {
+    Rbr,
+    Thr,
+    Dll,
+    Dlm,
+    Ier,
+    Iir,
+    Fcr,
+    Lcr,
+    Mcr,
+    Lsr,
+}
 
-static mut uart_EXISTS: bool = false;
-
-pub fn uart_init() {
-    // Turn off the FIFO
-    outb(COM1 + COM_FCR, 0);
-
-    // Set speed; requires DLAB latch
-    outb(COM1 + COM_LCR, COM_LCR_DLAB);
-    outb(COM1 + COM_DLL, (115200 / 9600) as u8);
-    outb(COM1 + COM_DLM, 0);
-
-    // 8 data bits, 1 stop bit, parity off; turn off DLAB latch
-    outb(COM1 + COM_LCR, COM_LCR_WLEN8 & !COM_LCR_DLAB);
-
-    // No modem controls
-    outb(COM1 + COM_MCR, 0);
-    // Enable rcv interrupts
-    outb(COM1 + COM_IER, COM_IER_RDI);
-
-    // Clear any preexisting overrun indications and interrupts
-    // uart port doesn't exist if COM_LSR returns 0xFF
-    unsafe {
-        uart_EXISTS = inb(COM1 + COM_LSR) != 0xFF;
+use core::convert::Into;
+impl Into<u16> for Register {
+    fn into(self) -> u16 {
+        match self {
+            Self::Rbr => 0,
+            Self::Thr => 0,
+            Self::Dll => 0,
+            Self::Dlm => 1,
+            Self::Ier => 1,
+            Self::Iir => 2,
+            Self::Fcr => 2,
+            Self::Lcr => 3,
+            Self::Mcr => 4,
+            Self::Lsr => 5,
+        }
     }
-    let _ = inb(COM1 + COM_IIR);
-    let _ = inb(COM1 + COM_RX);
+}
+
+impl Register {
+    unsafe fn write(self, data: u8) {
+        outb(COM1 + self as u16, data)
+    }
+
+    unsafe fn read(self) -> u8 {
+        inb(COM1 as u16 + self as u16)
+    }
+
+    unsafe fn dlab_on(other: Option<u8>) {
+        outb(COM1 + Self::Lcr as u16, 0x80 & other.unwrap_or(0xFF))
+    }
+
+    unsafe fn dlab_off(other: Option<u8>) {
+        outb(COM1 + Self::Lcr as u16, !0x80 & other.unwrap_or(0xFF))
+    }
+}
+
+pub struct Uart {
+    serial_exists: bool,
+}
+
+impl Uart {
+
+    // https://wiki.osdev.org/Serial_Ports#Example_Code
+    pub fn init(&mut self){
+        unsafe{
+            Register::Fcr.write(0);
+
+            Register::dlab_on(None);
+            Register::Dll.write((115200 / 9600) as u8);
+            Register::Dlm.write(0);
+
+            Register::dlab_off(Some(0x03));
+
+            Register::Mcr.write(0);
+            Register::Ier.write(0x01);
+
+            let serial_exists = Register::Lsr.read() != 0xFF;
+            Register::Iir.read();
+            Register::Rbr.read();
+        }
+    }
+
+    pub fn read_byte(&self) -> Option<u8> {
+        if !self.serial_exists {
+            return None;
+        }
+        while Self::serial_received() {}
+        None
+    }
+
+    fn serial_received() -> bool {
+        unsafe { Register::Ier.read() & 0x01 == 0 }
+    }
+
+    pub fn write_byte(&self, value: u8) {
+        while Self::is_transmit_empty() {}
+        outb(COM1, value) 
+    }
+
+    fn is_transmit_empty() -> bool {
+        unsafe { Register::Lsr.read() & 0x20 == 0 }
+    }
+
+    pub fn print(&mut self, args: fmt::Arguments) -> () {
+        use core::fmt::Write;
+        self.write_fmt(args).unwrap();
+    }
+}
+
+
+impl fmt::Write for Uart {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        for byte in s.bytes() {
+            self.write_byte(byte)
+        }
+        Ok(())
+    }
+}
+
+pub fn uart_init(){
+    unsafe{
+        UART.init();
+    }
 }

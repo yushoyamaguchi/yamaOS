@@ -7,7 +7,8 @@ mod memlayout;
 #[macro_use]
 mod console;
 
-use drivers::vga::VGA_BUFFER;
+use drivers::vga::*;
+use drivers::uart::*;
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 use mmu::*;
