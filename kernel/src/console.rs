@@ -1,6 +1,6 @@
 use crate::drivers::vga::*;
 use crate::drivers::kbc::*;
-use crate::drivers::serial::*;
+use crate::drivers::uart::*;
 
 
 macro_rules! print {
@@ -18,7 +18,7 @@ macro_rules! printk {
 
 pub fn cons_init() {
     vga_init();
-    serial_init();
+    uart_init();
 }
 
 pub fn cons_getc() -> char {

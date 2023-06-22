@@ -22,9 +22,9 @@ const COM_LSR_DATA: u8 = 0x01;  // Data available
 const COM_LSR_TXRDY: u8 = 0x20;  // Transmit buffer avail
 const COM_LSR_TSRE: u8 = 0x40; 
 
-static mut SERIAL_EXISTS: bool = false;
+static mut uart_EXISTS: bool = false;
 
-pub fn serial_init() {
+pub fn uart_init() {
     // Turn off the FIFO
     outb(COM1 + COM_FCR, 0);
 
@@ -42,9 +42,9 @@ pub fn serial_init() {
     outb(COM1 + COM_IER, COM_IER_RDI);
 
     // Clear any preexisting overrun indications and interrupts
-    // Serial port doesn't exist if COM_LSR returns 0xFF
+    // uart port doesn't exist if COM_LSR returns 0xFF
     unsafe {
-        SERIAL_EXISTS = inb(COM1 + COM_LSR) != 0xFF;
+        uart_EXISTS = inb(COM1 + COM_LSR) != 0xFF;
     }
     let _ = inb(COM1 + COM_IIR);
     let _ = inb(COM1 + COM_RX);
