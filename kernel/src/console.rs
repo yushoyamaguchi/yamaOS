@@ -1,3 +1,4 @@
+use crate::drivers::kbc;
 use crate::drivers::vga::*;
 use crate::drivers::kbc::*;
 use crate::drivers::uart::*;
@@ -16,10 +17,27 @@ macro_rules! printk {
     ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
 }
 
+pub const CONSBUFSIZE: usize = 512;
+
+pub struct Cons {
+    pub buf: [u8; CONSBUFSIZE],
+    pub rpos: u32,
+    pub wpos: u32,
+}
+
+pub static mut ConsoleStruct: Cons = Cons {
+    buf: [0; CONSBUFSIZE],
+    rpos: 0,
+    wpos: 0,
+};
+
 
 pub fn cons_init() {
     vga_init();
     uart_init();
+    if unsafe { ! UART.serial_exists } {
+        printk!("serial not exists");
+    }
 }
 
 pub fn cons_putc(c: char) {
@@ -30,5 +48,22 @@ pub fn cons_putc(c: char) {
 }
 
 pub fn cons_getc() -> char {
-    getc()
+    serial_intr();
+    kbc_intr();
+    unsafe{
+        if ConsoleStruct.rpos != ConsoleStruct.wpos {
+            let c=ConsoleStruct.buf[ConsoleStruct.rpos as usize];
+            ConsoleStruct.rpos = (ConsoleStruct.rpos+1)%CONSBUFSIZE as u32;
+            return c as char;
+        }
+    }
+    return 0 as char;
+}
+
+pub fn serial_intr(){
+    unsafe{
+        if UART.serial_exists {
+            UART.handle_interrupt();
+        }
+    }
 }

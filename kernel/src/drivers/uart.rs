@@ -1,11 +1,15 @@
 use core::fmt;
 use crate::x86::*;
+use crate::console::*;
 
 pub static mut UART: Uart = Uart{
     serial_exists: false,
 };
 
 const COM1: u16 = 0x3F8;
+const COM_RX: u16 = 0x00;
+const COM_TX: u16 = 0x00;
+const LsrData:u8 = 0x01;
 
 // ref. https://en.wikibooks.org/wiki/Serial_Programming/8250_UART_Programming#UART_Registers
 // TODO: validation(e.g. DLAB, read or write only)
@@ -22,9 +26,9 @@ enum Register {
     Lsr,
 }
 
-use core::convert::Into;
-impl Into<u16> for Register {
-    fn into(self) -> u16 {
+
+impl Register {
+    fn value(&self) -> u16 {
         match self {
             Self::Rbr => 0,
             Self::Thr => 0,
@@ -38,15 +42,12 @@ impl Into<u16> for Register {
             Self::Lsr => 5,
         }
     }
-}
-
-impl Register {
     unsafe fn write(self, data: u8) {
-        outb(COM1 + self as u16, data)
+        outb(COM1 + self.value() as u16, data)
     }
 
     unsafe fn read(self) -> u8 {
-        inb(COM1 as u16 + self as u16)
+        inb(COM1 as u16 + self.value() as u16)
     }
 
     unsafe fn dlab_on(other: Option<u8>) {
@@ -59,7 +60,7 @@ impl Register {
 }
 
 pub struct Uart {
-    serial_exists: bool,
+    pub serial_exists: bool,
 }
 
 impl Uart {
@@ -78,9 +79,35 @@ impl Uart {
             Register::Mcr.write(0);
             Register::Ier.write(0x01);
 
-            let serial_exists = Register::Lsr.read() != 0xFF;
+            self.serial_exists = Register::Lsr.read() != 0xFF;
             Register::Iir.read();
             Register::Rbr.read();
+        }
+    }
+
+    pub fn serial_proc_data(&mut self) ->i32{
+        unsafe{
+            if inb(COM1 + Register::Lsr.read() as u16) & LsrData == 0 {
+                return -1;
+            }
+            inb(COM1 + COM_RX) as i32
+        }
+    }
+
+    pub fn handle_interrupt(&mut self) {
+        let mut c=0;
+        loop{
+            c= self.serial_proc_data();
+            if c == -1 {
+                break;
+            }
+            if c == 0 {
+                continue;
+            }
+        }
+        unsafe {
+            ConsoleStruct.buf [ConsoleStruct.wpos as usize] = c as u8;
+            ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
         }
     }
 

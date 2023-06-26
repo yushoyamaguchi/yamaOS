@@ -1,4 +1,5 @@
-use crate::x86::inb;
+use crate::x86::*;
+use crate::console::*;
 
 const KBC_DATA_ADDR: u16 = 0x0060;
 const KBC_DATA_BIT_IS_BRAKE: u8 = 0x80;
@@ -44,6 +45,10 @@ fn get_keycode() -> u8 {
     keycode
 }
 
-pub fn getc() -> char {
-    KEYMAP[get_keycode() as usize]
+pub fn kbc_intr()  {
+    let c=KEYMAP[get_keycode() as usize];
+    unsafe {
+        ConsoleStruct.buf [ConsoleStruct.wpos as usize] = c as u8;
+        ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+    }
 }
