@@ -26,7 +26,7 @@ pub struct Cons {
 }
 
 pub static mut ConsoleStruct: Cons = Cons {
-    buf: [0; CONSBUFSIZE],
+    buf: ['0' as u8; CONSBUFSIZE],
     rpos: 0,
     wpos: 0,
 };
@@ -47,8 +47,19 @@ pub fn cons_putc(c: char) {
     }
 }
 
+pub fn getc() -> char {
+    let mut c;
+    loop {
+        c = cons_getc();
+        if c != 0 as char {
+            break;
+        }
+    }
+    return c;
+}
+
 pub fn cons_getc() -> char {
-    serial_intr();
+    //serial_intr();
     kbc_intr();
     unsafe{
         if ConsoleStruct.rpos != ConsoleStruct.wpos {

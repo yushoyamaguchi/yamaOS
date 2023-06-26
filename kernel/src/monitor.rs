@@ -5,11 +5,11 @@ pub fn monitor(){
     cons_putc('K');
     cons_putc('>');
     while 1==1  {
-        if(c=='\n'){
+        if c=='\n' {
             cons_putc('K');
             cons_putc('>');
         }
-        c = cons_getc();
+        c = getc();
         cons_putc(c);
     }
 }

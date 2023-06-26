@@ -87,10 +87,10 @@ impl Uart {
 
     pub fn serial_proc_data(&mut self) ->i32{
         unsafe{
-            if inb(COM1 + Register::Lsr.read() as u16) & LsrData == 0 {
+            if Register::Lsr.read() & LsrData == 0 {
                 return -1;
             }
-            inb(COM1 + COM_RX) as i32
+            return Register::Rbr.read() as i32;
         }
     }
 
