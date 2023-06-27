@@ -104,10 +104,10 @@ impl Uart {
             if c == 0 {
                 continue;
             }
-        }
-        unsafe {
-            ConsoleStruct.buf [ConsoleStruct.wpos as usize] = c as u8;
-            ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+            unsafe {
+                ConsoleStruct.buf [ConsoleStruct.wpos as usize] = c as u8;
+                ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+            }
         }
     }
 
