@@ -25,7 +25,7 @@ pub struct ConsStruct{
     pub wpos: u32,
 }
 
-pub static mut Cons: ConsStruct= ConsStruct{
+pub static mut CONS: ConsStruct= ConsStruct{
     buf: ['0' as u8; CONSBUFSIZE],
     rpos: 0,
     wpos: 0,
@@ -65,9 +65,9 @@ pub fn cons_getc() -> Option<char> {
     serial_intr();
     kbc_intr();
     unsafe{
-        if Cons.rpos != Cons.wpos {
-            let c=Cons.buf[Cons.rpos as usize];
-            Cons.rpos = (Cons.rpos+1)%CONSBUFSIZE as u32;
+        if CONS.rpos != CONS.wpos {
+            let c=CONS.buf[CONS.rpos as usize];
+            CONS.rpos = (CONS.rpos+1)%CONSBUFSIZE as u32;
             return Some(c as char);
         }
     }

@@ -110,8 +110,8 @@ impl Uart {
                 continue;
             }
             unsafe {
-                Cons.buf [Cons.wpos as usize] = c as u8;
-                Cons.wpos = (Cons.wpos+1)%CONSBUFSIZE as u32;
+                CONS.buf [CONS.wpos as usize] = c as u8;
+                CONS.wpos = (CONS.wpos+1)%CONSBUFSIZE as u32;
             }
         }
     }
