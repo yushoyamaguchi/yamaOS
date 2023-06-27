@@ -48,7 +48,7 @@ pub fn cons_putc(c: char) {
 }
 
 pub fn getc() -> char {
-    let mut c;
+    let c;
     loop {
         match cons_getc() {
             Some(cc) => {
@@ -62,7 +62,7 @@ pub fn getc() -> char {
 }
 
 pub fn cons_getc() -> Option<char> {
-    //serial_intr();
+    serial_intr();
     kbc_intr();
     unsafe{
         if ConsoleStruct.rpos != ConsoleStruct.wpos {

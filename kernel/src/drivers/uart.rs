@@ -90,7 +90,12 @@ impl Uart {
             if Register::Lsr.read() & LsrData == 0 {
                 return -1;
             }
-            return Register::Rbr.read() as i32;
+            let mut data= Register::Rbr.read() as i32;
+            // ASCIIのCRまたはLF（Enterキー）を'\n'に変換する
+            if data == 13 || data == 10 {
+                data = '\n' as i32;
+            }
+            data
         }
     }
 
