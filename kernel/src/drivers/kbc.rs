@@ -45,9 +45,7 @@ fn get_keycode() -> Option<u8> {
     if keycode_option  == None  {
         return None;
     }
-    else{
-        keycode = keycode_option.unwrap();
-    }
+    keycode = keycode_option.unwrap();
     if keycode & KBC_DATA_BIT_IS_BRAKE != 0 {
         None
     } else {
