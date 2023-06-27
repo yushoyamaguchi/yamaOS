@@ -58,8 +58,8 @@ pub fn kbc_intr()  {
     match get_keycode() {
         Some(c) => {
             unsafe {
-                ConsoleStruct.buf [ConsoleStruct.wpos as usize] = KEYMAP[c as usize] as u8;
-                ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+                Cons.buf [Cons.wpos as usize] = KEYMAP[c as usize] as u8;
+                Cons.wpos = (Cons.wpos+1)%CONSBUFSIZE as u32;
             }
         },
         None => {}

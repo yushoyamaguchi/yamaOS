@@ -110,8 +110,8 @@ impl Uart {
                 continue;
             }
             unsafe {
-                ConsoleStruct.buf [ConsoleStruct.wpos as usize] = c as u8;
-                ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+                Cons.buf [Cons.wpos as usize] = c as u8;
+                Cons.wpos = (Cons.wpos+1)%CONSBUFSIZE as u32;
             }
         }
     }

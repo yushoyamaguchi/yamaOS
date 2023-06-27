@@ -1,5 +1,6 @@
 use core::fmt;
 use crate::x86::*;
+use crate::console::*;
 
 const VGA_BUFFER_WIDTH: usize = 80;
 const VGA_BUFFER_HIGHT: usize = 25;

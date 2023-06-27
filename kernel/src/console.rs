@@ -19,13 +19,13 @@ macro_rules! printk {
 
 pub const CONSBUFSIZE: usize = 512;
 
-pub struct Cons {
+pub struct ConsStruct{
     pub buf: [u8; CONSBUFSIZE],
     pub rpos: u32,
     pub wpos: u32,
 }
 
-pub static mut ConsoleStruct: Cons = Cons {
+pub static mut Cons: ConsStruct= ConsStruct{
     buf: ['0' as u8; CONSBUFSIZE],
     rpos: 0,
     wpos: 0,
@@ -65,9 +65,9 @@ pub fn cons_getc() -> Option<char> {
     serial_intr();
     kbc_intr();
     unsafe{
-        if ConsoleStruct.rpos != ConsoleStruct.wpos {
-            let c=ConsoleStruct.buf[ConsoleStruct.rpos as usize];
-            ConsoleStruct.rpos = (ConsoleStruct.rpos+1)%CONSBUFSIZE as u32;
+        if Cons.rpos != Cons.wpos {
+            let c=Cons.buf[Cons.rpos as usize];
+            Cons.rpos = (Cons.rpos+1)%CONSBUFSIZE as u32;
             return Some(c as char);
         }
     }

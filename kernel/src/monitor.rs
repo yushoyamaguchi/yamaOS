@@ -10,6 +10,9 @@ pub fn monitor(){
             cons_putc('>');
         }
         c = getc();
+        if c==b'\x08' as char && unsafe { Cons.wpos  <= 1 } {
+            continue;
+        }
         cons_putc(c);
     }
 }
