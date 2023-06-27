@@ -95,9 +95,19 @@ impl VGABuffer{
         }
     }
 
+    pub fn delete_last_char(&mut self) {
+        if self.x_pos>0 {
+            self.x_pos -= 1;
+            self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(b' ', ColorCode::White, ColorCode::Black);
+        }
+    }
+
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
+            b'\x08'  => {
+                self.delete_last_char();
+            }
             byte => {
                 if self.x_pos<VGA_BUFFER_WIDTH {
                     self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::Black);

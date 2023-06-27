@@ -91,7 +91,7 @@ impl Uart {
                 return -1;
             }
             let mut data= Register::Rbr.read() as i32;
-            // ASCIIのCRまたはLF（Enterキー）を'\n'に変換する
+            // change ASCII CR or LF (Enter key) to '\n'
             if data == 13 || data == 10 {
                 data = '\n' as i32;
             }
@@ -128,12 +128,26 @@ impl Uart {
         unsafe { Register::Ier.read() & 0x01 == 0 }
     }
 
+    pub fn erase_last_char(&self) {
+        //delete one char
+        self.write_byte(8);
+        /* enable after implementing lock
+        self.write_byte(32); 
+        self.write_byte(8); 
+        */
+    }
+    
+
     pub fn write_byte(&self, value: u8) {
         while Self::is_transmit_empty() {}
         outb(COM1, value) 
     }
 
     pub fn putc(&mut self, c: char) {
+        if c == 8 as char || c == 127 as char {
+            self.erase_last_char();
+            return;
+        }
         self.write_byte(c as u8)
     }
 
@@ -151,6 +165,10 @@ impl Uart {
 impl fmt::Write for Uart {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for byte in s.bytes() {
+            if byte == 8 || byte == 127 {
+                self.erase_last_char();
+                continue;
+            }
             self.write_byte(byte)
         }
         Ok(())
