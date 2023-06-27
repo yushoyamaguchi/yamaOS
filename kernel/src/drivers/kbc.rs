@@ -29,26 +29,41 @@ const KEYMAP: [char; 128] = [
 	0x00 as char, 0x00 as char, 0x00 as char, 0x00 as char, 0x00 as char, '\\', 0x00 as char, 0x00 as char
 ];
 
-fn get_kbc_data() -> u8 {
+fn get_kbc_data() -> Option<u8> {
     // Wait until the OBF bit is set in the status register.
-    while  inb(KBC_STATUS_ADDR)  & KBC_STATUS_BIT_OBF == 0 {}
-    inb(KBC_DATA_ADDR) 
+    if inb(KBC_STATUS_ADDR)  & KBC_STATUS_BIT_OBF == 0 {
+        None
+    } else {
+        Some(inb(KBC_DATA_ADDR))
+    }
 }
 
-fn get_keycode() -> u8 {
-    let mut keycode;
+fn get_keycode() -> Option<u8> {
+    let keycode;
     // Wait until the brake bit is not set (i.e., make state).
-    while {
-        keycode = get_kbc_data();
-        keycode & KBC_DATA_BIT_IS_BRAKE != 0
-    } {}
-    keycode
+    let keycode_option = get_kbc_data();
+    if keycode_option  == None  {
+        return None;
+    }
+    else{
+        keycode = keycode_option.unwrap();
+    }
+    if keycode & KBC_DATA_BIT_IS_BRAKE != 0 {
+        None
+    } else {
+        Some(keycode)
+    }
 }
+
 
 pub fn kbc_intr()  {
-    let c=KEYMAP[get_keycode() as usize];
-    unsafe {
-        ConsoleStruct.buf [ConsoleStruct.wpos as usize] = c as u8;
-        ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+    match get_keycode() {
+        Some(c) => {
+            unsafe {
+                ConsoleStruct.buf [ConsoleStruct.wpos as usize] = KEYMAP[c as usize] as u8;
+                ConsoleStruct.wpos = (ConsoleStruct.wpos+1)%CONSBUFSIZE as u32;
+            }
+        },
+        None => {}
     }
 }

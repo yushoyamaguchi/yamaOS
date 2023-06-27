@@ -50,25 +50,28 @@ pub fn cons_putc(c: char) {
 pub fn getc() -> char {
     let mut c;
     loop {
-        c = cons_getc();
-        if c != 0 as char {
-            break;
+        match cons_getc() {
+            Some(cc) => {
+                c = cc;
+                break;
+            }
+            None => {}
         }
     }
     return c;
 }
 
-pub fn cons_getc() -> char {
+pub fn cons_getc() -> Option<char> {
     //serial_intr();
     kbc_intr();
     unsafe{
         if ConsoleStruct.rpos != ConsoleStruct.wpos {
             let c=ConsoleStruct.buf[ConsoleStruct.rpos as usize];
             ConsoleStruct.rpos = (ConsoleStruct.rpos+1)%CONSBUFSIZE as u32;
-            return c as char;
+            return Some(c as char);
         }
     }
-    return 0 as char;
+    return None;
 }
 
 pub fn serial_intr(){
