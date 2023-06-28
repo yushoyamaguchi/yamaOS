@@ -133,10 +133,10 @@ impl Uart {
         self.write_byte(8);
 
         // ToDo : Should enable after implementing lock
-        /* 
+        
         self.write_byte(32); 
         self.write_byte(8); 
-        */
+        
     }
     
 

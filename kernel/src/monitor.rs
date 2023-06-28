@@ -20,13 +20,13 @@ pub fn monitor(){
         
         c = getc();
         //  ToDo : Now, we don't consider input buffer overflow
-        if c==b'\x08' as char && unsafe { CONS.rpos  > 3 } {
+        if (c==b'\x08' as char ||c==b'\x7f' as char)&& unsafe { CONS.rpos  > 3 } {
             unsafe{
                 CONS.rpos -= 2;
                 CONS.wpos -= 2;
             }
         }
-        else if c==b'\x08' as char && unsafe { CONS.rpos  <= 3 } {
+        else if (c==b'\x08' as char ||c==b'\x7f' as char) && unsafe { CONS.rpos  <= 3 } {
             unsafe{
                 CONS.rpos -= 1;
                 CONS.wpos -= 1;

@@ -106,7 +106,7 @@ impl VGABuffer{
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
-            b'\x08'  => {
+            b'\x08' | b'\x7f'  => {
                 self.delete_last_char();
             }
             byte => {
