@@ -132,7 +132,7 @@ impl Uart {
         //delete one char
         self.write_byte(8);
 
-        //Sould enable after implementing lock
+        // ToDo : Should enable after implementing lock
         /* 
         self.write_byte(32); 
         self.write_byte(8); 
