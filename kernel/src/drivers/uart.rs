@@ -12,7 +12,6 @@ const COM_TX: u16 = 0x00;
 const LsrData:u8 = 0x01;
 
 // ref. https://en.wikibooks.org/wiki/Serial_Programming/8250_UART_Programming#UART_Registers
-// TODO: validation(e.g. DLAB, read or write only)
 enum Register {
     Rbr,
     Thr,
