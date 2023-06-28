@@ -6,7 +6,7 @@
 - QEMU
 ## Example install commands in ubuntu
 In this directory,
-```
+```bash
 # build-essential
 sudo apt install build-essential
 # rust
