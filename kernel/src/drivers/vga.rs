@@ -60,7 +60,7 @@ pub struct VGABuffer {
 
 impl VGABuffer{
     pub fn clear_screen(&mut self) {
-        // 左上のチカチカを消す
+        // Turn off the blinking light in the upper left corner.
         unsafe {
             let port = 0x3D4;
             outb(port, 0x0A);
@@ -150,7 +150,7 @@ impl VGABuffer{
         self.flush();
     }
 
-    pub fn flush(&mut self) -> () {//構造体の内容をVGAを通して画面に出力
+    pub fn flush(&mut self) -> () { // Output the contents of the structure to the screen through VGA
         let vga_text_buffer = 0xb8000 as *mut u8;
         for y in 0..VGA_BUFFER_HIGHT {
             for x in 0..VGA_BUFFER_WIDTH {

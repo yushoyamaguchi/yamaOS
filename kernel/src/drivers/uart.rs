@@ -131,7 +131,9 @@ impl Uart {
     pub fn erase_last_char(&self) {
         //delete one char
         self.write_byte(8);
-        /* enable after implementing lock
+
+        //Sould enable after implementing lock
+        /* 
         self.write_byte(32); 
         self.write_byte(8); 
         */
