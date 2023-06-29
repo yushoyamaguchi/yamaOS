@@ -1,4 +1,5 @@
-use crate::x86::read_io_port;
+use crate::x86::*;
+use crate::console::*;
 
 const KBC_DATA_ADDR: u16 = 0x0060;
 const KBC_DATA_BIT_IS_BRAKE: u8 = 0x80;
@@ -28,22 +29,39 @@ const KEYMAP: [char; 128] = [
 	0x00 as char, 0x00 as char, 0x00 as char, 0x00 as char, 0x00 as char, '\\', 0x00 as char, 0x00 as char
 ];
 
-fn get_kbc_data() -> u8 {
+fn get_kbc_data() -> Option<u8> {
     // Wait until the OBF bit is set in the status register.
-    while  read_io_port(KBC_STATUS_ADDR)  & KBC_STATUS_BIT_OBF == 0 {}
-    read_io_port(KBC_DATA_ADDR) 
+    if inb(KBC_STATUS_ADDR)  & KBC_STATUS_BIT_OBF == 0 {
+        None
+    } else {
+        Some(inb(KBC_DATA_ADDR))
+    }
 }
 
-fn get_keycode() -> u8 {
-    let mut keycode;
+fn get_keycode() -> Option<u8> {
+    let keycode;
     // Wait until the brake bit is not set (i.e., make state).
-    while {
-        keycode = get_kbc_data();
-        keycode & KBC_DATA_BIT_IS_BRAKE != 0
-    } {}
-    keycode
+    let keycode_option = get_kbc_data();
+    if keycode_option  == None  {
+        return None;
+    }
+    keycode = keycode_option.unwrap();
+    if keycode & KBC_DATA_BIT_IS_BRAKE != 0 {
+        None
+    } else {
+        Some(keycode)
+    }
 }
 
-pub fn getc() -> char {
-    KEYMAP[get_keycode() as usize]
+
+pub fn kbc_intr()  {
+    match get_keycode() {
+        Some(c) => {
+            unsafe {
+                CONS.buf [CONS.wpos as usize] = KEYMAP[c as usize] as u8;
+                CONS.wpos = (CONS.wpos+1)%CONSBUFSIZE as u32;
+            }
+        },
+        None => {}
+    }
 }

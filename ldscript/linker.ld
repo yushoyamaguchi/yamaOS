@@ -1,22 +1,40 @@
 
 SECTIONS {
-    . = 1M;
+    . = 0x80100000;
 
-    .text : ALIGN(4K) {
+    .text : AT(0x100000) {
         KEEP(*(.multiboot_header))
         *(.text)
     }
 
-    .rodata : ALIGN(4K) {
-        *(.rodata)
+    .rodata : {
+		. = ALIGN(4096);
+		*(.rodata.entrypgdir)
+        *(.rodata .rodata.* .gnu.linkonce.r.*)
     }
 
-    .data : ALIGN(4K) {
-        *(.data)
-    }
+    /* Include debugging information in kernel memory */
+    .stab : {
+		*(.stab);
+	}
 
-    .bss : ALIGN(4K) {
-        *(.bss)
-        *(COMMON)
-    }
+	.stabstr : {
+		*(.stabstr);
+	}
+
+    /* Adjust the address for the data segment to the next page */
+    . = ALIGN(0x1000);
+
+    /* The data segment */
+    .data : {
+		*(.data)
+	}
+
+    .bss : {
+		*(.bss)
+	}
+
+    /DISCARD/ : {
+		*(.eh_frame .note.GNU-stack)
+	}
 }

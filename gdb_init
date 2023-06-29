@@ -1,4 +1,4 @@
 target remote localhost:1234
-
+file build/boot/yamaos.bin
 
 b kernel_main

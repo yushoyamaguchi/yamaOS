@@ -1,4 +1,6 @@
 use core::fmt;
+use crate::x86::*;
+use crate::console::*;
 
 const VGA_BUFFER_WIDTH: usize = 80;
 const VGA_BUFFER_HIGHT: usize = 25;
@@ -13,7 +15,7 @@ pub static mut VGA_BUFFER: VGABuffer = VGABuffer {
     y_pos: 0,
 };
 
-pub enum ColorCode {
+enum ColorCode {
     Black = 0x0,
     Blue = 0x1,
     Green = 0x2,
@@ -57,6 +59,15 @@ pub struct VGABuffer {
 }
 
 impl VGABuffer{
+    pub fn clear_screen(&mut self) {
+        // Turn off the blinking light in the upper left corner.
+        unsafe {
+            let port = 0x3D4;
+            outb(port, 0x0A);
+            let value = inb(port + 1);
+            outb(port + 1, value | 0x20);
+        }
+    }
     pub fn new_line(&mut self) {
         if self.y_pos<VGA_BUFFER_HIGHT-1 {
             self.x_pos = 0;
@@ -85,9 +96,19 @@ impl VGABuffer{
         }
     }
 
+    pub fn delete_last_char(&mut self) {
+        if self.x_pos>0 {
+            self.x_pos -= 1;
+            self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(b' ', ColorCode::White, ColorCode::Black);
+        }
+    }
+
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
+            b'\x08' | b'\x7f'  => {
+                self.delete_last_char();
+            }
             byte => {
                 if self.x_pos<VGA_BUFFER_WIDTH {
                     self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::Black);
@@ -100,6 +121,11 @@ impl VGABuffer{
                 }
             }
         }
+    }
+
+    pub fn putc(&mut self, c: char) {
+        self.write_byte(c as u8);
+        self.flush();
     }
 
     pub fn write_str(&mut self, s: &str) -> () {
@@ -124,7 +150,7 @@ impl VGABuffer{
         self.flush();
     }
 
-    pub fn flush(&mut self) -> () {//構造体の内容をVGAを通して画面に出力
+    pub fn flush(&mut self) -> () { // Output the contents of the structure to the screen through VGA
         let vga_text_buffer = 0xb8000 as *mut u8;
         for y in 0..VGA_BUFFER_HIGHT {
             for x in 0..VGA_BUFFER_WIDTH {
@@ -149,5 +175,10 @@ impl fmt::Write for VGABuffer {
     }
 }
 
+pub fn vga_init() {
+    unsafe {
+        VGA_BUFFER.clear_screen();
+    }
+}
 
 

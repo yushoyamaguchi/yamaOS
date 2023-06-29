@@ -31,10 +31,14 @@ ISO := $(BUILD_DIR)/$(OS_NAME).iso
 build: $(ISO)
 
 run-gdb: $(ISO)
-	qemu-system-i386 -s -S -cdrom $(ISO)
+	qemu-system-i386 -s -S -cdrom $(ISO) -serial mon:stdio
+
+run-only-gui: $(ISO)
+	qemu-system-i386 -cdrom $(ISO)
 
 run: $(ISO)
-	qemu-system-i386 -cdrom $(ISO)
+	qemu-system-i386 -cdrom $(ISO) -serial mon:stdio
+
 
 $(ISO): $(OS_OBJ) $(GRUB_CFG)
 	mkdir -p $(BUILD_DIR)/boot/grub
