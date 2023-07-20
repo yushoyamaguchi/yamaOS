@@ -1,6 +1,8 @@
 #![no_std]
 
 mod drivers;
+#[macro_use]
+mod util;
 mod x86;
 mod mmu;
 mod memlayout;
@@ -10,6 +12,7 @@ mod console;
 
 use drivers::vga::*;
 use drivers::uart::*;
+use util::assert::*;
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 use mmu::*;
@@ -28,6 +31,7 @@ macro_rules! assigned_array {
 #[panic_handler]
 #[no_mangle]
 pub extern "C" fn panic(_info: &PanicInfo) -> ! {
+    printk!("{}", _info);
     loop {}
 }
 
@@ -51,6 +55,7 @@ pub extern "C" fn kernel_main() -> ! {
     let test_str="This is yamaOS";
     printk!("Hello World!");
     printk!("{}", test_str);
+    //assert!("test" == "test2");
     monitor();
     loop {}
 }
