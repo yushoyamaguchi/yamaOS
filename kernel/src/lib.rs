@@ -13,7 +13,7 @@ mod pmap;
 
 use drivers::vga::*;
 use drivers::uart::*;
-use util::assert::*;
+use util::types::*;
 use core::panic::PanicInfo;
 use core::arch::global_asm;
 use mmu::*;
