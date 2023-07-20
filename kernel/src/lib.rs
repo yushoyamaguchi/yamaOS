@@ -9,6 +9,7 @@ mod memlayout;
 mod monitor;
 #[macro_use]
 mod console;
+mod pmap;
 
 use drivers::vga::*;
 use drivers::uart::*;
@@ -19,6 +20,7 @@ use mmu::*;
 use memlayout::*;
 use console::*;
 use monitor::*;
+use pmap::*;
 
 macro_rules! assigned_array {
     ($def:expr; $len:expr; $([$idx:expr] = $val:expr),*) => {{
@@ -55,7 +57,10 @@ pub extern "C" fn kernel_main() -> ! {
     let test_str="This is yamaOS";
     printk!("Hello World!");
     printk!("{}", test_str);
-    //assert!("test" == "test2");
-    monitor();
+    assert!(1 == 1);
+    mem_init();
+    while 1==1  {
+        monitor();
+    }
     loop {}
 }
