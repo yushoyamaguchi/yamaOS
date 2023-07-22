@@ -1,12 +1,16 @@
+use core::ptr::null_mut;
+
 use crate::drivers::ram::*;
 use crate::mmu::*;
 use crate::memlayout::*;
 use crate::drivers::vga::*;
 use crate::drivers::uart::*;
+use crate::util::mem::*;
 use crate::util::types::*;
 
 pub static mut NPAGES: usize = 0;
 pub static mut NPAGES_BASEMEM: usize = 0;
+pub static mut kern_pgdir: *mut PdeT = null_mut();
 
 fn nvram_read(r: u32) -> u32 {
     return mc146818_read(r) | (mc146818_read(r + 1) << 8);
@@ -45,33 +49,33 @@ fn i386_detect_memory() {
 
 
 #[no_mangle]
-static mut NEXT_FREE: *mut u32 = 0 as *mut u32;
+static mut NEXT_FREE: *mut u32 = null_mut();
 
 extern "C" {
     static end: *mut u32;
 }
 
-unsafe fn init() {
+unsafe fn nextfree_init() {
     NEXT_FREE = roundup((&end as *const _ as usize) as u32, PGSIZE as u32) as *mut u32;
 }
 
 #[no_mangle]
 unsafe fn boot_alloc(n: usize) -> *mut u32 {
     if NEXT_FREE.is_null() {
-        init();
+        nextfree_init();
     }
 
     let result = NEXT_FREE;
-    let new_next = roundup((result as usize + n) as u32, PGSIZE as u32);
+    NEXT_FREE = roundup((result as usize + n) as u32, PGSIZE as u32) as *mut u32;
 
-    if new_next > 0xffffffff {
-        panic!("boot_alloc(): out of memory");
-    }
-
-    NEXT_FREE = new_next as *mut u32;
     result
 }
 
 pub fn mem_init(){
     i386_detect_memory();
+    unsafe {
+        kern_pgdir=boot_alloc( PGSIZE as usize );
+        memset(kern_pgdir as *mut u8, 0, PGSIZE);
+    }
+    
 }

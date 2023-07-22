@@ -1,4 +1,5 @@
 #![no_std]
+#[allow(unused)]
 
 mod drivers;
 #[macro_use]
