@@ -10,7 +10,18 @@ use crate::util::types::*;
 
 pub static mut NPAGES: usize = 0;
 pub static mut NPAGES_BASEMEM: usize = 0;
-pub static mut kern_pgdir: *mut PdeT = null_mut();
+pub static mut KERN_PGDIR: *mut PdeT = null_mut();
+
+static mut PAGE_FREE_LIST: *mut PageInfo = null_mut();
+static mut PAGES: *mut PageInfo = null_mut();
+
+
+pub fn paddr( kva: u32) -> u32 {
+    if kva < KERNBASE as u32 {
+        panic!(concat!("assertion failed: "));
+    }
+    kva - KERNBASE as u32
+}
 
 fn nvram_read(r: u32) -> u32 {
     return mc146818_read(r) | (mc146818_read(r + 1) << 8);
@@ -74,8 +85,20 @@ unsafe fn boot_alloc(n: usize) -> *mut u32 {
 pub fn mem_init(){
     i386_detect_memory();
     unsafe {
-        kern_pgdir=boot_alloc( PGSIZE as usize );
-        memset(kern_pgdir as *mut u8, 0, PGSIZE);
+        KERN_PGDIR=boot_alloc( PGSIZE as usize );
+        memset(KERN_PGDIR as *mut u8, 0, PGSIZE);
     }
     
+}
+
+
+fn page_init(){
+    unsafe{
+        PAGE_FREE_LIST = null_mut();
+    }
+    let mut addr:PhysaddrT = 0;
+    unsafe{
+        let kern_pgdir_slice = core::slice::from_raw_parts_mut(KERN_PGDIR, PGSIZE); // replace SIZE with the actual size
+        kern_pgdir_slice[pdx(UVPT)] = paddr(KERN_PGDIR as u32) | PTE_U | PTE_P;
+    }
 }
