@@ -19,3 +19,7 @@ pub const PTSHIFT: usize = PTXSHIFT + PGSHIFT; // log2(PTSIZE)
 pub fn pdx(la: usize) -> usize {
     (la >> PDXSHIFT) & 0x3FF
 }
+
+pub fn pgnum(la: usize) -> usize {
+    la >> PTXSHIFT
+}

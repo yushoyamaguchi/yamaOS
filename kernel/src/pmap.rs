@@ -8,6 +8,8 @@ use crate::drivers::uart::*;
 use crate::util::mem::*;
 use crate::util::types::*;
 
+const ALLOC_ZERO: u32 = 0x1;
+
 pub static mut NPAGES: usize = 0;
 pub static mut NPAGES_BASEMEM: usize = 0;
 pub static mut KERN_PGDIR: *mut PdeT = null_mut();
@@ -19,6 +21,19 @@ fn page2pa(page: *mut PageInfo) -> PhysaddrT {
     unsafe{
         (page as PhysaddrT - PAGES as PhysaddrT) << PGSHIFT
     }
+}
+
+fn page2kva(page: *mut PageInfo) -> *mut u32 {
+    unsafe{
+        kaddr(page2pa(page))
+    }
+}
+
+unsafe fn kaddr(pa: PhysaddrT) -> *mut u32 {
+    if pgnum(pa as usize) >= NPAGES  {
+        panic!("KADDR called with invalid pa {:08x}", pa);
+    }
+    (pa + KERNBASE as u32) as *mut u32
 }
 
 pub fn paddr( kva: u32) -> u32 {
@@ -98,6 +113,7 @@ pub fn mem_init(){
         memset(PAGES as *mut u8, 0, NPAGES * core::mem::size_of::<PageInfo>());
     }
     page_init();
+    check_page_free_list();
 }
 
 
@@ -120,4 +136,36 @@ fn page_init(){
             PAGE_FREE_LIST = PAGES.offset(i as isize);
         }
     }
+}
+
+fn page_alloc(alloc_flags:u32)->*mut PageInfo{
+    unsafe{
+        if PAGE_FREE_LIST.is_null(){
+            return null_mut();
+        }
+        let mut ret:*mut PageInfo=PAGE_FREE_LIST;
+        let mut addr:*mut u32=page2kva(ret);
+        if alloc_flags & ALLOC_ZERO != 0{
+            memset(addr as *mut u8, 0, PGSIZE);
+        }
+        PAGE_FREE_LIST=(*ret).pp_link;
+        (*ret).pp_link=null_mut();
+        (*ret).pp_ref=1;
+        return ret;
+    }
+}
+
+fn check_page_free_list(){
+    let pp: *mut PageInfo;
+    let pdx_limit:usize= NPDENTRIES;
+    let nfree_basemem:u64;
+    let nfree_extmem:u64;
+    let first_free_page:*mut u32;
+
+    unsafe{
+        if PAGE_FREE_LIST.is_null(){
+            panic!("check_page_free_list: page free list is empty");
+        }
+    }
+
 }
