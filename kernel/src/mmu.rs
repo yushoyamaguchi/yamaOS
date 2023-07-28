@@ -11,8 +11,10 @@ pub const PTE_U: u32 = 0x004; // User
 pub const PTE_PS: u32 = 0x080; // Page Size
 
 pub const PGSIZE: usize = 4096; // bytes mapped by a page
+pub const PGSHIFT: usize = 12; // log2(PGSIZE)
 
 pub const PTSIZE: usize = PGSIZE * NPTENTRIES; // bytes mapped by a page directory entry
+pub const PTSHIFT: usize = PTXSHIFT + PGSHIFT; // log2(PTSIZE)
 
 pub fn pdx(la: usize) -> usize {
     (la >> PDXSHIFT) & 0x3FF

@@ -15,6 +15,11 @@ pub static mut KERN_PGDIR: *mut PdeT = null_mut();
 static mut PAGE_FREE_LIST: *mut PageInfo = null_mut();
 static mut PAGES: *mut PageInfo = null_mut();
 
+fn page2pa(page: *mut PageInfo) -> PhysaddrT {
+    unsafe{
+        (page as PhysaddrT - PAGES as PhysaddrT) << PGSHIFT
+    }
+}
 
 pub fn paddr( kva: u32) -> u32 {
     if kva < KERNBASE as u32 {
@@ -87,18 +92,32 @@ pub fn mem_init(){
     unsafe {
         KERN_PGDIR=boot_alloc( PGSIZE as usize );
         memset(KERN_PGDIR as *mut u8, 0, PGSIZE);
+        let kern_pgdir_slice = core::slice::from_raw_parts_mut(KERN_PGDIR, PGSIZE); // replace SIZE with the actual size
+        kern_pgdir_slice[pdx(UVPT)] = paddr(KERN_PGDIR as u32) | PTE_U | PTE_P;
+        PAGES=boot_alloc( NPAGES * core::mem::size_of::<PageInfo>() ) as *mut PageInfo;
+        memset(PAGES as *mut u8, 0, NPAGES * core::mem::size_of::<PageInfo>());
     }
-    
+    page_init();
 }
 
 
 fn page_init(){
+    let mut addr:PhysaddrT;
     unsafe{
         PAGE_FREE_LIST = null_mut();
-    }
-    let mut addr:PhysaddrT = 0;
-    unsafe{
-        let kern_pgdir_slice = core::slice::from_raw_parts_mut(KERN_PGDIR, PGSIZE); // replace SIZE with the actual size
-        kern_pgdir_slice[pdx(UVPT)] = paddr(KERN_PGDIR as u32) | PTE_U | PTE_P;
+        let pages_slice = core::slice::from_raw_parts_mut(PAGES, NPAGES);
+        pages_slice[0].pp_ref = 1;
+        pages_slice[0].pp_link = null_mut();
+        for i in 1 .. NPAGES_BASEMEM{
+            let addr=page2pa(PAGES.offset(i as isize));
+            if addr >= IOPHYSMEM as PhysaddrT && addr < EXTPHYSMEM as PhysaddrT{
+                pages_slice[i].pp_ref = 1;
+                pages_slice[i].pp_link = null_mut();
+                continue;
+            }
+            pages_slice[i].pp_ref = 0;
+            pages_slice[i].pp_link = PAGE_FREE_LIST;
+            PAGE_FREE_LIST = PAGES.offset(i as isize);
+        }
     }
 }
