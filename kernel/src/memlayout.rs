@@ -2,7 +2,7 @@ use crate::mmu::*;
 
 pub type PageTableEntry = u32;
 pub type PageDirEntry = u32;
-pub const KERNBASE: usize = 0x80000000;
+pub const KERNBASE: usize = 0xF0000000;
 
 
 pub type PteT = u32;

@@ -1,5 +1,5 @@
 .att_syntax prefix
-.equ KERNBASE, 0x80000000
+.equ KERNBASE, 0xF0000000
 .equ CR4_PSE,  0x00000010  # Page size extension
 .equ CR0_WP,     0x00010000  # Write Protect
 .equ CR0_PG,     0x80000000  # Paging
