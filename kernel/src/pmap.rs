@@ -5,6 +5,7 @@ use crate::mmu::*;
 use crate::memlayout::*;
 use crate::drivers::vga::*;
 use crate::drivers::uart::*;
+use crate::util::assert;
 use crate::util::mem::*;
 use crate::util::types::*;
 
@@ -113,7 +114,7 @@ pub fn mem_init(){
         memset(PAGES as *mut u8, 0, NPAGES * core::mem::size_of::<PageInfo>());
     }
     page_init();
-    check_page_free_list();
+    check_page_alloc();
 }
 
 
@@ -155,8 +156,46 @@ fn page_alloc(alloc_flags:u32)->*mut PageInfo{
     }
 }
 
+fn check_page_alloc(){
+    let mut pp: *mut PageInfo;
+    let mut pp1: *mut PageInfo;
+    let mut pp2: *mut PageInfo;
+    let mut pp3: *mut PageInfo;
+    let mut fl: *mut PageInfo;
+    let mut nfree:u32=0;
+    unsafe{
+        if PAGES.is_null(){
+            panic!("check_page_alloc: PAGES is a null pointer");
+        }
+        pp=PAGE_FREE_LIST;
+        while pp != null_mut(){
+            nfree+=1;
+            pp=(*pp).pp_link;
+        }
+        pp1=0 as *mut PageInfo;
+        pp2=0 as *mut PageInfo;
+        pp3=0 as *mut PageInfo;
+        pp1=page_alloc(0);
+        assert!(pp1 != null_mut());
+        pp2=page_alloc(0);
+        assert!(pp2 != null_mut());
+        pp3=page_alloc(0);
+        assert!(pp3 != null_mut());
+        assert!(pp2 != pp1);
+        assert!(pp3 != pp1);
+        assert!(pp3 != pp2);
+        assert!(page2pa(pp1)<(NPAGES as u32*PGSIZE as u32) );
+        assert!(page2pa(pp2)<(NPAGES as u32*PGSIZE as u32) );
+        assert!(page2pa(pp3)<(NPAGES as u32*PGSIZE as u32) );
+        fl=PAGE_FREE_LIST;
+        PAGE_FREE_LIST=0 as *mut PageInfo;
+        assert!(page_alloc(0) == null_mut());
+
+    }
+}
+
 fn check_page_free_list(){
-    let pp: *mut PageInfo;
+    let mut pp: *mut PageInfo;
     let pdx_limit:usize= NPDENTRIES;
     let nfree_basemem:u64;
     let nfree_extmem:u64;
@@ -165,6 +204,19 @@ fn check_page_free_list(){
     unsafe{
         if PAGE_FREE_LIST.is_null(){
             panic!("check_page_free_list: page free list is empty");
+        }
+        pp=PAGE_FREE_LIST;
+        while pp != null_mut(){
+            if pdx(page2pa(pp) as usize )<pdx_limit{
+                memset(page2kva(pp) as *mut u8,0x97,128);
+            }
+            pp=(*pp).pp_link;
+        }
+        first_free_page=boot_alloc(0);
+        pp=PAGE_FREE_LIST;
+        while pp != null_mut(){
+            assert!(pp>=PAGES);
+            assert!(pp<PAGES.wrapping_add(NPAGES));
         }
     }
 
