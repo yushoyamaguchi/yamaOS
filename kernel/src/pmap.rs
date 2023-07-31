@@ -151,8 +151,33 @@ fn page_alloc(alloc_flags:u32)->*mut PageInfo{
         }
         PAGE_FREE_LIST=(*ret).pp_link;
         (*ret).pp_link=null_mut();
-        (*ret).pp_ref=1;
+        (*ret).pp_ref=0;
         return ret;
+    }
+}
+
+fn page_free(pp: *mut PageInfo){
+    unsafe{
+        if (*pp).pp_ref != 0{
+            panic!("page_free: pp->pp_ref isn't zero");
+        }
+        if (*pp).pp_link != null_mut(){
+            panic!("page_free: pp->pp_link is not null");
+        }
+        (*pp).pp_link=PAGE_FREE_LIST;
+        PAGE_FREE_LIST=pp;
+    }
+}
+
+fn page_decref(pp: *mut PageInfo){
+    unsafe{
+        if (*pp).pp_ref == 0{
+            panic!("page_decref: pp->pp_ref is zero");
+        }
+        (*pp).pp_ref-=1;
+        if (*pp).pp_ref == 0{
+            page_free(pp);
+        }
     }
 }
 
@@ -190,6 +215,9 @@ fn check_page_alloc(){
         fl=PAGE_FREE_LIST;
         PAGE_FREE_LIST=0 as *mut PageInfo;
         assert!(page_alloc(0) == null_mut());
+        page_free(pp1);
+        page_free(pp2);
+        page_free(pp3);
 
     }
 }
