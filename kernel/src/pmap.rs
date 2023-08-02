@@ -33,6 +33,9 @@ fn page2kva(page: *mut PageInfo) -> *mut u32 {
 
 fn pa2page(pa: PhysaddrT) -> *mut PageInfo {
     unsafe{
+        if pgnum(pa as usize) >= NPAGES {
+            panic!("pa2page called with invalid pa {:08x}", pa);
+        }
         PAGES.offset(pgnum(pa as usize) as isize)
     }
 }
@@ -218,6 +221,7 @@ fn check_page_alloc(){
     let mut pp3: *mut PageInfo;
     let mut fl: *mut PageInfo;
     let mut nfree:u32=0;
+    let mut c:*mut u8;
     unsafe{
         if PAGES.is_null(){
             panic!("check_page_alloc: PAGES is a null pointer");
@@ -248,6 +252,16 @@ fn check_page_alloc(){
         page_free(pp1);
         page_free(pp2);
         page_free(pp3);
+
+        memset(page2kva(pp1) as *mut u8, 1, PGSIZE);
+        page_free(pp1);
+        pp=page_alloc(ALLOC_ZERO);
+        assert!(pp != null_mut());
+        c=page2kva(pp) as *mut u8;
+        for i in 0..PGSIZE{
+            c=c.offset(i as isize);
+            assert!(*c == 0);
+        }
 
     }
 }
