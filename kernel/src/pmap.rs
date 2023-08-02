@@ -1,4 +1,5 @@
 use core::ptr::null_mut;
+use core::cmp::min;
 
 use crate::drivers::ram::*;
 use crate::mmu::*;
@@ -27,6 +28,12 @@ fn page2pa(page: *mut PageInfo) -> PhysaddrT {
 fn page2kva(page: *mut PageInfo) -> *mut u32 {
     unsafe{
         kaddr(page2pa(page))
+    }
+}
+
+fn pa2page(pa: PhysaddrT) -> *mut PageInfo {
+    unsafe{
+        PAGES.offset(pgnum(pa as usize) as isize)
     }
 }
 
@@ -126,7 +133,7 @@ fn page_init(){
         pages_slice[0].pp_ref = 1;
         pages_slice[0].pp_link = null_mut();
         for i in 1 .. NPAGES_BASEMEM{
-            let addr=page2pa(PAGES.offset(i as isize));
+            addr=page2pa(PAGES.offset(i as isize));
             if addr >= IOPHYSMEM as PhysaddrT && addr < EXTPHYSMEM as PhysaddrT{
                 pages_slice[i].pp_ref = 1;
                 pages_slice[i].pp_link = null_mut();
@@ -136,6 +143,29 @@ fn page_init(){
             pages_slice[i].pp_link = PAGE_FREE_LIST;
             PAGE_FREE_LIST = PAGES.offset(i as isize);
         }
+
+        let first_free_page_pa=paddr(boot_alloc(0) as u32);
+        assert!(first_free_page_pa % PGSIZE as u32 == 0);
+        assert!(first_free_page_pa >= IOPHYSMEM as u32);
+        let first_free_page_index=pa2page(first_free_page_pa).offset_from(PAGES);
+        let hole_start_page_index=min(NPAGES_BASEMEM, IOPHYSMEM  / PGSIZE );
+        for i in hole_start_page_index .. first_free_page_index as usize{ //This area cannot be allocated
+            pages_slice[i].pp_ref = 1;
+            pages_slice[i].pp_link = null_mut();
+        }
+
+        for i in first_free_page_index as usize .. NPAGES{
+            addr=page2pa(PAGES.offset(i as isize));
+            if addr >= IOPHYSMEM as PhysaddrT && addr < EXTPHYSMEM as PhysaddrT{ //Maybe this area don't exist in free_page
+                pages_slice[i].pp_ref = 1;
+                pages_slice[i].pp_link = null_mut();
+                continue;
+            }
+            pages_slice[i].pp_ref = 0;
+            pages_slice[i].pp_link = PAGE_FREE_LIST;
+            PAGE_FREE_LIST = PAGES.offset(i as isize);
+        }
+        
     }
 }
 
