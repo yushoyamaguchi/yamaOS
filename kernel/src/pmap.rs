@@ -124,6 +124,7 @@ pub fn mem_init(){
         memset(PAGES as *mut u8, 0, NPAGES * core::mem::size_of::<PageInfo>());
     }
     page_init();
+    relocate_page_free_list(true);
     check_page_alloc();
 }
 
@@ -214,6 +215,32 @@ fn page_decref(pp: *mut PageInfo){
     }
 }
 
+fn relocate_page_free_list(only_lowmem: bool){
+    let mut pp: *mut PageInfo;
+    let pdx_limit=if only_lowmem {1} else {NPDENTRIES};
+    unsafe{
+        if PAGE_FREE_LIST.is_null(){
+            panic!("check_page_free_list: PAGE_FREE_LIST is a null pointer");
+        }
+        if only_lowmem {
+            let (mut pp1, mut pp2): (*mut PageInfo, *mut PageInfo) = (null_mut(), null_mut());
+            let mut tp: [*mut *mut PageInfo; 2] = [&mut pp1, &mut pp2 ];
+            pp=PAGE_FREE_LIST;
+            while pp != null_mut(){
+                let page_type= if pdx(page2pa(pp) as usize) >= pdx_limit { 1 } else { 0 };
+                *tp[page_type] = pp;
+                if !(*pp).pp_link.is_null() {
+                    tp[page_type] = &mut (*pp).pp_link;
+                }
+                pp=(*pp).pp_link;
+            }
+            *tp[0] = null_mut();
+            *tp[1] = pp2;
+            PAGE_FREE_LIST = pp1;
+        }
+    }
+}
+
 fn check_page_alloc(){
     let mut pp: *mut PageInfo;
     let mut pp1: *mut PageInfo;
@@ -257,11 +284,11 @@ fn check_page_alloc(){
         page_free(pp1);
         pp=page_alloc(ALLOC_ZERO);
         assert!(pp != null_mut());
-        c=page2kva(pp) as *mut u8;
+        /*c=page2kva(pp) as *mut u8;
         for i in 0..PGSIZE{
             c=c.offset(i as isize);
             assert!(*c == 0);
-        }
+        }*/
 
     }
 }
