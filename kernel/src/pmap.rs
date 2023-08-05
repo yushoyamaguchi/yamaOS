@@ -219,6 +219,52 @@ fn page_decref(pp: *mut PageInfo){
     }
 }
 
+pub fn boot_map_region(pgdir: &mut u32, va: u32, size: usize, pa: u32, perm: i32) {
+
+    assert!(va % PGSIZE as u32 == 0);
+    assert!(pa % PGSIZE as u32 == 0);
+    assert!(size % PGSIZE == 0);
+
+    let mut i = 0;
+    while i < size {
+        let table_entry = pgdir_walk(pgdir, (va + i as u32) , true);
+        if table_entry==null_mut() {
+            panic!("boot_map_region: pgdir_walk returned null");
+        }
+        unsafe{
+            *table_entry = pa + i as u32 | perm as u32 | PTE_P;
+        }
+        i += PGSIZE;
+    }
+}
+
+fn pgdir_walk(pgdir: &mut u32, va: u32, create:bool) -> *mut u32 {
+    let pdx = pdx(va as usize);
+    let pgdir_slice = unsafe { core::slice::from_raw_parts_mut(pgdir, NPDENTRIES) };
+    if pgdir_slice[pdx]&PTE_P != 0{
+        unsafe{
+            let pgtable = kaddr(pte_addr(pgdir_slice[pdx] as usize )as u32) as *mut u32;
+            return pgtable.offset(ptx(va as usize) as isize);
+        }
+    } else if create {
+        unsafe{
+            let mut new_pgtable_pp=page_alloc(ALLOC_ZERO) ;
+            if new_pgtable_pp == null_mut(){
+                return 0 as *mut u32;
+            }
+            (*new_pgtable_pp).pp_ref+=1;
+            let new_pgtable_pa:PhysaddrT=page2pa(new_pgtable_pp) as PhysaddrT;
+            pgdir_slice[pdx]=new_pgtable_pa as u32 | PTE_P | PTE_W | PTE_U;
+            let new_pgtable_va=kaddr(new_pgtable_pa as u32) as *mut u32;
+            return new_pgtable_va.offset(ptx(va as usize) as isize);
+        }
+    } else {
+        null_mut()
+    }
+}
+
+
+
 fn relocate_page_free_list(only_lowmem: bool){
     let mut pp: *mut PageInfo;
     let pdx_limit=if only_lowmem {1} else {NPDENTRIES};

@@ -20,6 +20,14 @@ pub fn pdx(la: usize) -> usize {
     (la >> PDXSHIFT) & 0x3FF
 }
 
+pub fn ptx(la: usize) -> usize {
+    (la >> PTXSHIFT) & 0x3FF
+}
+
 pub fn pgnum(la: usize) -> usize {
     la >> PTXSHIFT
+}
+
+pub fn pte_addr(pte: usize) -> usize {
+    pte & !0xFFF
 }
