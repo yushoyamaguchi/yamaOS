@@ -125,6 +125,7 @@ pub fn mem_init(){
     }
     page_init();
     relocate_page_free_list(true);
+    check_page_free_list();
     check_page_alloc();
 }
 
@@ -316,6 +317,7 @@ fn check_page_free_list(){
         while pp != null_mut(){
             assert!(pp>=PAGES);
             assert!(pp<PAGES.wrapping_add(NPAGES));
+            pp=(*pp).pp_link;
         }
     }
 
