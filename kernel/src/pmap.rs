@@ -21,6 +21,9 @@ static mut PAGES: *mut PageInfo = null_mut();
 
 fn page2pa(page: *mut PageInfo) -> PhysaddrT {
     unsafe{
+        if page < PAGES  {
+            panic!("page2pa called with invalid page {:08x} , {:08x}", page as PhysaddrT, PAGES as PhysaddrT);
+        }
         (page as PhysaddrT - PAGES as PhysaddrT) << PGSHIFT
     }
 }
@@ -306,13 +309,13 @@ fn check_page_free_list(){
             panic!("check_page_free_list: page free list is empty");
         }
         pp=PAGE_FREE_LIST;
-        while pp != null_mut(){
+        printk!("pp {:x}\n",pp as u32);
+        /*while pp != null_mut(){
             if pdx(page2pa(pp) as usize )<pdx_limit{
                 memset(page2kva(pp) as *mut u8,0x97,128);
             }
             pp=(*pp).pp_link;
-        }
-        first_free_page=boot_alloc(0);
+        }*/
         pp=PAGE_FREE_LIST;
         while pp != null_mut(){
             assert!(pp>=PAGES);
