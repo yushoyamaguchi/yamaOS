@@ -132,7 +132,7 @@ pub fn mem_init(){
     check_page_alloc();
 
     unsafe{
-        boot_map_region(KERN_PGDIR as *mut u32, UVPT as u32, PGSIZE , paddr(KERN_PGDIR as u32), PTE_U );
+        boot_map_region(KERN_PGDIR, UVPT as u32, PGSIZE , paddr(KERN_PGDIR as u32), PTE_U );
         //boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , paddr(KERN_PGDIR as u32), PTE_W );
         //boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, !(KERNBASE)+1 , 0, PTE_W );
     }
@@ -244,7 +244,7 @@ pub fn boot_map_region(pgdir: *mut u32, va: u32, size: usize, pa: u32, perm: u32
     }
 }
 
-fn pgdir_walk(pgdir: &mut u32, va: u32, create:bool) -> *mut u32 {
+fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
     let pdx = pdx(va as usize);
     let pgdir_slice = unsafe { core::slice::from_raw_parts_mut(pgdir, NPDENTRIES) };
     if pgdir_slice[pdx]&PTE_P != 0{
@@ -361,7 +361,6 @@ fn check_page_free_list(){
             panic!("check_page_free_list: page free list is empty");
         }
         pp=PAGE_FREE_LIST;
-        printk!("pp {:x}\n",pp as u32);
         /*while pp != null_mut(){
             if pdx(page2pa(pp) as usize )<pdx_limit{
                 memset(page2kva(pp) as *mut u8,0x97,128);
