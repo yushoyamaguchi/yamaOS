@@ -130,6 +130,12 @@ pub fn mem_init(){
     relocate_page_free_list(true);
     check_page_free_list();
     check_page_alloc();
+
+    unsafe{
+        boot_map_region(KERN_PGDIR as *mut u32, UVPT as u32, PGSIZE , paddr(KERN_PGDIR as u32), PTE_U );
+        //boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , paddr(KERN_PGDIR as u32), PTE_W );
+        //boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, !(KERNBASE)+1 , 0, PTE_W );
+    }
 }
 
 
@@ -219,7 +225,7 @@ fn page_decref(pp: *mut PageInfo){
     }
 }
 
-pub fn boot_map_region(pgdir: &mut u32, va: u32, size: usize, pa: u32, perm: i32) {
+pub fn boot_map_region(pgdir: *mut u32, va: u32, size: usize, pa: u32, perm: u32) {
 
     assert!(va % PGSIZE as u32 == 0);
     assert!(pa % PGSIZE as u32 == 0);

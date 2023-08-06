@@ -46,7 +46,7 @@ pub static entrypgdir: [PageDirEntry; NPDENTRIES] = assigned_array![
     // Map VA's [0, 4MB) to PA's [0, 4MB)
     [0] = 0x000 | PTE_P | PTE_W | PTE_PS,
     // Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
-    [(KERNBASE as usize) >> PDXSHIFT] = 0x000 | 0x001 | 0x002 | 0x080
+    [(KERNBASE as usize) >> PDXSHIFT] = 0x000 | PTE_P | PTE_W | PTE_PS
     // 0x80 means the size of the page is 4MiB
 ];
 
