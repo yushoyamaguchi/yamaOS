@@ -190,7 +190,6 @@ fn page_init(){
 fn page_alloc(alloc_flags:u32)->*mut PageInfo{
     unsafe{
         if PAGE_FREE_LIST.is_null(){
-            printk!("page_alloc: no memory");
             return null_mut();
         }
         let mut ret:*mut PageInfo=PAGE_FREE_LIST;
