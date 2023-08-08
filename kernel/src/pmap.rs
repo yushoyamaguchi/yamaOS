@@ -1,3 +1,4 @@
+use core::mem::size_of;
 use core::ptr::null_mut;
 use core::cmp::min;
 
@@ -52,7 +53,7 @@ unsafe fn kaddr(pa: PhysaddrT) -> *mut u32 {
 
 pub fn paddr( kva: u32) -> u32 {
     if kva < KERNBASE as u32 {
-        panic!(concat!("assertion failed: "));
+        panic!("PADDR called with invalid kva {:08x}", kva);
     }
     kva - KERNBASE as u32
 }
@@ -96,8 +97,10 @@ fn i386_detect_memory() {
 #[no_mangle]
 static mut NEXT_FREE: *mut u32 = null_mut();
 
-extern "C" {
+extern  {
     static end: *mut u32;
+    static bootstack:  *mut u32;
+    static bootstacktop: *mut u32;
 }
 
 unsafe fn nextfree_init() {
@@ -112,7 +115,7 @@ unsafe fn boot_alloc(n: usize) -> *mut u32 {
 
     let result = NEXT_FREE;
     NEXT_FREE = roundup((result as usize + n) as u32, PGSIZE as u32) as *mut u32;
-
+    
     result
 }
 
@@ -132,8 +135,10 @@ pub fn mem_init(){
     check_page_alloc();
 
     unsafe{
-        boot_map_region(KERN_PGDIR, UVPT as u32, PGSIZE , paddr(KERN_PGDIR as u32), PTE_U );
-        //boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , paddr(KERN_PGDIR as u32), PTE_W );
+        boot_map_region(KERN_PGDIR, UPAGES as u32, roundup((NPAGES*size_of::<PageInfo>()) as u32, PGSIZE as u32) as usize, paddr(PAGES as u32), PTE_U );
+        let stack_paddr=paddr(rounddown(bootstacktop as u32-(KSTKSIZE as u32),PGSIZE as u32));
+        printk!("stack_paddr: {:08x}", stack_paddr);
+        boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , stack_paddr, PTE_W );
         //boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, !(KERNBASE)+1 , 0, PTE_W );
     }
 }

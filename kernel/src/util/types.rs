@@ -3,7 +3,7 @@ pub type UintptrT = u32;
 pub type PhysaddrT = u32;
 
 
-fn rounddown(a: u32, n: u32) -> u32 {
+pub fn rounddown(a: u32, n: u32) -> u32 {
     a - a % n
 }
 

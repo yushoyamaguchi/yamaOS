@@ -4,7 +4,7 @@
 .equ CR0_WP,     0x00010000  # Write Protect
 .equ CR0_PG,     0x80000000  # Paging
 .equ CR0_PE,     0x00000001  # Protection Enable
-.equ KSTACKSIZE, 4096*2    # Size of per-process kernel stack
+.equ BSTACKSIZE, 4096*9    # Size of per-process kernel stack
 .equ PGSHIFT,    12      # log2(PGSIZE)
 
 .global entry_kernel
@@ -21,7 +21,7 @@ entry_kernel:
     orl     $(CR0_PE|CR0_PG|CR0_WP), %eax
     movl    %eax, %cr0
     # Set up the stack pointer.
-    movl    $(bootstack + KSTACKSIZE), %esp
+    movl    $(bootstacktop), %esp
     # VGA test message
     movl    $0x2f6f2f4c, 0xb8000
     movl    $0x2f642f61, 0xb8004
@@ -38,6 +38,6 @@ entry_kernel:
 	.p2align	PGSHIFT		# force page alignment
 	.globl		bootstack
 bootstack:
-	.space		KSTACKSIZE
+	.space		BSTACKSIZE
 	.globl		bootstacktop   
 bootstacktop:   
