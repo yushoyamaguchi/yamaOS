@@ -22,10 +22,10 @@ static mut PAGES: *mut PageInfo = null_mut();
 
 fn page2pa(page: *mut PageInfo) -> PhysaddrT {
     unsafe{
-        if page < PAGES  {
-            panic!("page2pa called with invalid page {:08x} , {:08x}", page as PhysaddrT, PAGES as PhysaddrT);
-        }
-        (page as PhysaddrT - PAGES as PhysaddrT) << PGSHIFT
+        let sizeof_pageinfo:u32 = size_of::<PageInfo>() as u32;
+        let page_index:u32 = (page as PhysaddrT - PAGES as PhysaddrT)/sizeof_pageinfo as u32;
+        page_index << PGSHIFT
+
     }
 }
 
@@ -166,6 +166,7 @@ fn page_init(){
             PAGE_FREE_LIST = PAGES.offset(i as isize);
         }
 
+        printk!("boot_alloc: {:08x}", boot_alloc(0) as u32);
         let first_free_page_pa=paddr(boot_alloc(0) as u32);
         assert!(first_free_page_pa % PGSIZE as u32 == 0);
         assert!(first_free_page_pa >= IOPHYSMEM as u32);
@@ -205,18 +206,6 @@ fn page_alloc(alloc_flags:u32)->*mut PageInfo{
         PAGE_FREE_LIST=(*ret).pp_link;
         (*ret).pp_link=null_mut();
         (*ret).pp_ref=0;
-        let mut i=0;
-        let mut pp: *mut PageInfo=PAGE_FREE_LIST;
-        let mut the_last_pp: *mut PageInfo=null_mut();
-        while pp!=null_mut(){
-            i+=1;
-            if (*pp).pp_link==null_mut(){
-                the_last_pp=pp;
-            }
-            pp=(*pp).pp_link;
-        }
-        printk!("the last pp: {:8x}", the_last_pp as u32);
-        printk!("page_alloc: {:8x} pages left , ret={:8x}, page_free_list={:8x}", i, ret as u32, PAGE_FREE_LIST as u32);
         return ret;
     }
 }
