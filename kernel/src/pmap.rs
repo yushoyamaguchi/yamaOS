@@ -302,9 +302,7 @@ fn relocate_page_free_list(only_lowmem: bool){
             while pp != null_mut(){
                 let page_type= if pdx(page2pa(pp) as usize) >= pdx_limit { 1 } else { 0 };
                 *tp[page_type] = pp;
-                if !(*pp).pp_link.is_null() {
-                    tp[page_type] = &mut (*pp).pp_link;
-                }
+                tp[page_type] = &mut (*pp).pp_link;
                 pp=(*pp).pp_link;
             }
             *tp[1] = 0 as *mut PageInfo;
