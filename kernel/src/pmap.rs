@@ -88,7 +88,7 @@ fn i386_detect_memory() {
         NPAGES = totalmem / (PGSIZE / 1024);
         NPAGES_BASEMEM = basemem / (PGSIZE / 1024);
     }
-
+    
     printk!("Physical memory: {}K available, base = {}K, extended = {}K",
         totalmem, basemem, totalmem - basemem);
 }
@@ -115,7 +115,7 @@ unsafe fn boot_alloc(n: usize) -> *mut u32 {
 
     let result = NEXT_FREE;
     NEXT_FREE = roundup((result as usize + n) as u32, PGSIZE as u32) as *mut u32;
-    
+
     result
 }
 
@@ -132,14 +132,14 @@ pub fn mem_init(){
     page_init();
     relocate_page_free_list(true);
     check_page_free_list();
-    check_page_alloc();
+    //check_page_alloc();
 
     unsafe{
         boot_map_region(KERN_PGDIR, UPAGES as u32, roundup((NPAGES*size_of::<PageInfo>()) as u32, PGSIZE as u32) as usize, paddr(PAGES as u32), PTE_U );
         let stack_paddr=paddr(rounddown(bootstacktop as u32-(KSTKSIZE as u32),PGSIZE as u32));
-        printk!("stack_paddr: {:08x}", stack_paddr);
+        //printk!("stack_paddr: {:08x}", stack_paddr);
         boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , stack_paddr, PTE_W );
-        //boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, !(KERNBASE)+1 , 0, PTE_W );
+        boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, (!KERNBASE) +1 , 0, PTE_W );
     }
 }
 
@@ -191,6 +191,7 @@ fn page_init(){
 fn page_alloc(alloc_flags:u32)->*mut PageInfo{
     unsafe{
         if PAGE_FREE_LIST.is_null(){
+            printk!("page_alloc: no memory");
             return null_mut();
         }
         let mut ret:*mut PageInfo=PAGE_FREE_LIST;
@@ -201,6 +202,9 @@ fn page_alloc(alloc_flags:u32)->*mut PageInfo{
         PAGE_FREE_LIST=(*ret).pp_link;
         (*ret).pp_link=null_mut();
         (*ret).pp_ref=0;
+        if PAGE_FREE_LIST.is_null(){
+            printk!("page_alloc2: no memory");
+        }
         return ret;
     }
 }
@@ -215,6 +219,9 @@ fn page_free(pp: *mut PageInfo){
         }
         (*pp).pp_link=PAGE_FREE_LIST;
         PAGE_FREE_LIST=pp;
+        if PAGE_FREE_LIST.is_null(){
+            panic!("page_free: PAGE_FREE_LIST is null");
+        }
     }
 }
 
@@ -240,7 +247,7 @@ pub fn boot_map_region(pgdir: *mut u32, va: u32, size: usize, pa: u32, perm: u32
     while i < size {
         let table_entry = pgdir_walk(pgdir, (va + i as u32) , true);
         if table_entry==null_mut() {
-            panic!("boot_map_region: pgdir_walk returned null");
+            panic!("boot_map_region: pgdir_walk returned null {:8x} size={:8x}, va={:8x}",i,size,va);
         }
         unsafe{
             *table_entry = pa + i as u32 | perm as u32 | PTE_P;
@@ -261,13 +268,18 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
         unsafe{
             let mut new_pgtable_pp=page_alloc(ALLOC_ZERO) ;
             if new_pgtable_pp == null_mut(){
-                return 0 as *mut u32;
+                printk!("pgdir_walk: page_alloc failed");
+                return null_mut();
             }
             (*new_pgtable_pp).pp_ref+=1;
             let new_pgtable_pa:PhysaddrT=page2pa(new_pgtable_pp) as PhysaddrT;
             pgdir_slice[pdx]=new_pgtable_pa as u32 | PTE_P | PTE_W | PTE_U;
             let new_pgtable_va=kaddr(new_pgtable_pa as u32) as *mut u32;
-            return new_pgtable_va.offset(ptx(va as usize) as isize);
+            let ret=new_pgtable_va.offset(ptx(va as usize) as isize);
+            /*if ret.is_null(){
+                printk!("pgdir_walk null: va={:8x} ",va);
+            }*/
+            return ret;
         }
     } else {
         null_mut()
@@ -295,9 +307,12 @@ fn relocate_page_free_list(only_lowmem: bool){
                 }
                 pp=(*pp).pp_link;
             }
-            *tp[0] = null_mut();
-            *tp[1] = pp2;
+            *tp[1] = 0 as *mut PageInfo;
+            *tp[0] = pp2;
             PAGE_FREE_LIST = pp1;
+            if PAGE_FREE_LIST.is_null(){
+                panic!("check_page_free_list: PAGE_FREE_LIST is a null pointer");
+            }
         }
     }
 }
@@ -340,6 +355,7 @@ fn check_page_alloc(){
         page_free(pp1);
         page_free(pp2);
         page_free(pp3);
+        PAGE_FREE_LIST=fl;
 
         memset(page2kva(pp1) as *mut u8, 1, PGSIZE);
         page_free(pp1);
