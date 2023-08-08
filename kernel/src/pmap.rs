@@ -89,8 +89,6 @@ fn i386_detect_memory() {
         NPAGES_BASEMEM = basemem / (PGSIZE / 1024);
     }
 
-    printk!("npages {:08x}, npages_basemem {:08x}", NPAGES, NPAGES_BASEMEM);
-
     printk!("Physical memory: {}K available, base = {}K, extended = {}K",
         totalmem, basemem, totalmem - basemem);
 }
@@ -133,15 +131,13 @@ pub fn mem_init(){
     }
     page_init();
     relocate_page_free_list(true);
-    //check_page_free_list();
-    //check_page_alloc();
+    check_page_free_list();
+    check_page_alloc();
 
     unsafe{
         boot_map_region(KERN_PGDIR, UPAGES as u32, roundup((NPAGES*size_of::<PageInfo>()) as u32, PGSIZE as u32) as usize, paddr(PAGES as u32), PTE_U );
         let stack_paddr=paddr(rounddown(bootstacktop as u32-(KSTKSIZE as u32),PGSIZE as u32));
-        printk!("stack_paddr: {:08x}", stack_paddr);
         boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , stack_paddr, PTE_W );
-        printk!("after stack");
         boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, (!KERNBASE) +1 , 0, PTE_W );
     }
 }
@@ -166,7 +162,6 @@ fn page_init(){
             PAGE_FREE_LIST = PAGES.offset(i as isize);
         }
 
-        printk!("boot_alloc: {:08x}", boot_alloc(0) as u32);
         let first_free_page_pa=paddr(boot_alloc(0) as u32);
         assert!(first_free_page_pa % PGSIZE as u32 == 0);
         assert!(first_free_page_pa >= IOPHYSMEM as u32);
@@ -248,7 +243,6 @@ pub fn boot_map_region(pgdir: *mut u32, va: u32, size: usize, pa: u32, perm: u32
     while i < size {
         let table_entry = pgdir_walk(pgdir, (va + i as u32) , true);
         if table_entry==null_mut() {
-            printk!("table entry {:8x} ,{:8x}",table_entry as u32,va+i as u32);
             panic!("boot_map_region: pgdir_walk returned null {:8x} size={:8x}, va={:8x}",i,size,va);
         }
         unsafe{
@@ -283,7 +277,6 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
             return ret;
         }
     } else {
-        panic!("pgdir_walk: create is false");
         null_mut()
     }
 }
@@ -310,7 +303,6 @@ fn relocate_page_free_list(only_lowmem: bool){
             *tp[1] = null_mut();
             *tp[0] = pp2;
             PAGE_FREE_LIST = pp1;
-            printk!("relocate : PAGE_FREE_LIST={:8x} , pp2={:8x}", pp1 as u32, pp2 as u32);
             if PAGE_FREE_LIST.is_null(){
                 panic!("check_page_free_list: PAGE_FREE_LIST is a null pointer");
             }
