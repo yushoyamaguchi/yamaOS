@@ -22,10 +22,10 @@ static mut PAGES: *mut PageInfo = null_mut();
 
 fn page2pa(page: *mut PageInfo) -> PhysaddrT {
     unsafe{
-        if page < PAGES  {
-            panic!("page2pa called with invalid page {:08x} , {:08x}", page as PhysaddrT, PAGES as PhysaddrT);
-        }
-        (page as PhysaddrT - PAGES as PhysaddrT) << PGSHIFT
+        let sizeof_pageinfo:u32 = size_of::<PageInfo>() as u32;
+        let page_index:u32 = (page as PhysaddrT - PAGES as PhysaddrT)/sizeof_pageinfo as u32;
+        page_index << PGSHIFT
+
     }
 }
 
@@ -88,7 +88,7 @@ fn i386_detect_memory() {
         NPAGES = totalmem / (PGSIZE / 1024);
         NPAGES_BASEMEM = basemem / (PGSIZE / 1024);
     }
-    
+
     printk!("Physical memory: {}K available, base = {}K, extended = {}K",
         totalmem, basemem, totalmem - basemem);
 }
@@ -132,12 +132,11 @@ pub fn mem_init(){
     page_init();
     relocate_page_free_list(true);
     check_page_free_list();
-    //check_page_alloc();
+    check_page_alloc();
 
     unsafe{
         boot_map_region(KERN_PGDIR, UPAGES as u32, roundup((NPAGES*size_of::<PageInfo>()) as u32, PGSIZE as u32) as usize, paddr(PAGES as u32), PTE_U );
         let stack_paddr=paddr(rounddown(bootstacktop as u32-(KSTKSIZE as u32),PGSIZE as u32));
-        //printk!("stack_paddr: {:08x}", stack_paddr);
         boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , stack_paddr, PTE_W );
         boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, (!KERNBASE) +1 , 0, PTE_W );
     }
@@ -202,9 +201,6 @@ fn page_alloc(alloc_flags:u32)->*mut PageInfo{
         PAGE_FREE_LIST=(*ret).pp_link;
         (*ret).pp_link=null_mut();
         (*ret).pp_ref=0;
-        if PAGE_FREE_LIST.is_null(){
-            printk!("page_alloc2: no memory");
-        }
         return ret;
     }
 }
@@ -262,7 +258,8 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
     if pgdir_slice[pdx]&PTE_P != 0{
         unsafe{
             let pgtable = kaddr(pte_addr(pgdir_slice[pdx] as usize )as u32) as *mut u32;
-            return pgtable.offset(ptx(va as usize) as isize);
+            let ret=pgtable.offset(ptx(va as usize) as isize);
+            return ret;
         }
     } else if create {
         unsafe{
@@ -276,9 +273,7 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
             pgdir_slice[pdx]=new_pgtable_pa as u32 | PTE_P | PTE_W | PTE_U;
             let new_pgtable_va=kaddr(new_pgtable_pa as u32) as *mut u32;
             let ret=new_pgtable_va.offset(ptx(va as usize) as isize);
-            /*if ret.is_null(){
-                printk!("pgdir_walk null: va={:8x} ",va);
-            }*/
+
             return ret;
         }
     } else {
@@ -305,7 +300,7 @@ fn relocate_page_free_list(only_lowmem: bool){
                 tp[page_type] = &mut (*pp).pp_link;
                 pp=(*pp).pp_link;
             }
-            *tp[1] = 0 as *mut PageInfo;
+            *tp[1] = null_mut();
             *tp[0] = pp2;
             PAGE_FREE_LIST = pp1;
             if PAGE_FREE_LIST.is_null(){
