@@ -427,4 +427,5 @@ fn check_kern_pgdir() {
         assert!(left == right);
         i+=PGSIZE as u32;
     }
+    assert!(check_va2pa(pgdir, (KSTACKTOP - PTSIZE) as u32) == !(0));
 }
