@@ -19,3 +19,9 @@ pub fn outb(port: u16, value: u8) {
             options(att_syntax))
     }
 }
+
+pub fn lcr3(val: u32) {
+    unsafe{
+        asm!("movl {}, %cr3", in(reg) val, options(att_syntax));
+    }
+}

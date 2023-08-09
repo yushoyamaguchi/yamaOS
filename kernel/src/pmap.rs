@@ -10,6 +10,7 @@ use crate::drivers::uart::*;
 use crate::util::assert;
 use crate::util::mem::*;
 use crate::util::types::*;
+use crate::x86::*;
 
 const ALLOC_ZERO: u32 = 0x1;
 
@@ -141,6 +142,8 @@ pub fn mem_init(){
         boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, (!KERNBASE) +1 , 0, PTE_W );
     }
     check_kern_pgdir();
+    //lcr3(paddr(unsafe { KERN_PGDIR } as u32));
+
 }
 
 
@@ -428,4 +431,21 @@ fn check_kern_pgdir() {
         i+=PGSIZE as u32;
     }
     assert!(check_va2pa(pgdir, (KSTACKTOP - PTSIZE) as u32) == !(0));
+    let pgdir_slice    = unsafe { core::slice::from_raw_parts_mut(pgdir, NPDENTRIES) };
+    for i in 0..NPDENTRIES {
+        match i {
+            x if x == pdx(UVPT) || x == pdx(KSTACKTOP - 1) || x == pdx(UPAGES) => {
+                assert!((pgdir_slice[i] & PTE_P) != 0);
+            }
+            _ => {
+                if i >= pdx(KERNBASE) {
+                    assert!((pgdir_slice[i] & PTE_P) != 0);
+                    assert!((pgdir_slice[i] & PTE_W) != 0);
+                } else {
+                    assert!(pgdir_slice[i] == 0);
+                }
+            }
+        }
+              
+    }
 }
