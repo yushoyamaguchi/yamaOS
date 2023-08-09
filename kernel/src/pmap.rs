@@ -256,7 +256,7 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
     let pgdir_slice = unsafe { core::slice::from_raw_parts_mut(pgdir, NPDENTRIES) };
     if pgdir_slice[pdx]&PTE_P != 0{
         unsafe{
-            let pgtable = kaddr(pte_addr(pgdir_slice[pdx] as usize )as u32) as *mut u32;
+            let pgtable = kaddr(pte_addr(pgdir_slice[pdx] )as u32) as *mut u32;
             let ret=pgtable.offset(ptx(va as usize) as isize);
             return ret;
         }
@@ -388,4 +388,26 @@ fn check_page_free_list(){
         }
     }
 
+}
+
+fn check_va2pa(pgdir: *mut PdeT, va:UintptrT) -> PhysaddrT{
+    let pgdir_slice    = unsafe { core::slice::from_raw_parts_mut(pgdir, NPDENTRIES) };
+    let pgdir_entry    = pgdir_slice[pdx(va as usize)];
+    if pgdir_entry & PTE_P == 0 {
+        return !(0) ;
+    }
+    let pgtable= unsafe { kaddr(pte_addr(pgdir_entry ) as u32) };
+    let pgtable_silce = unsafe { core::slice::from_raw_parts_mut(pgtable, NPTENTRIES) };
+    let pgtable_entry = pgtable_silce[ptx(va as usize)];
+    if pgtable_entry & PTE_P == 0 {
+        return !(0) ;
+    }
+    pte_addr(pgtable_entry ) as u32
+}
+
+fn check_kern_pgdir() {
+    let pgdir=unsafe { KERN_PGDIR };
+    let mut i:u32 = 0;
+    let mut n:u32 = 0;
+    n=roundup((unsafe { NPAGES }*size_of::<PageInfo>()) as u32, PGSIZE as u32);
 }

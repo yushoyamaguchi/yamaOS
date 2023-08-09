@@ -28,6 +28,6 @@ pub fn pgnum(la: usize) -> usize {
     la >> PTXSHIFT
 }
 
-pub fn pte_addr(pte: usize) -> usize {
+pub fn pte_addr(pte: u32) -> u32 {
     pte & !0xFFF
 }
