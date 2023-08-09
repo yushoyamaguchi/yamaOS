@@ -140,6 +140,7 @@ pub fn mem_init(){
         boot_map_region(KERN_PGDIR as *mut u32, (KSTACKTOP-KSTKSIZE) as u32, KSTKSIZE , stack_paddr, PTE_W );
         boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, (!KERNBASE) +1 , 0, PTE_W );
     }
+    check_kern_pgdir();
 }
 
 
@@ -410,4 +411,20 @@ fn check_kern_pgdir() {
     let mut i:u32 = 0;
     let mut n:u32 = 0;
     n=roundup((unsafe { NPAGES }*size_of::<PageInfo>()) as u32, PGSIZE as u32);
+    while i<unsafe { NPAGES } as u32{
+        assert!(check_va2pa(pgdir, UPAGES as u32+i) == paddr(unsafe{PAGES} as u32)+i);
+        i+=PGSIZE as u32;
+    }
+    i=0;
+    while i<(unsafe { NPAGES }*PGSIZE) as u32 {
+        assert!(check_va2pa(pgdir, KERNBASE as u32+i) == i);
+        i+=PGSIZE as u32;
+    }
+    i=0;
+    while i<KSTKSIZE as u32 {
+        let left=check_va2pa(pgdir, (KSTACKTOP-KSTKSIZE) as u32+i);
+        let right=paddr(rounddown(unsafe{bootstacktop} as u32-(KSTKSIZE as u32),PGSIZE as u32))+i;
+        assert!(left == right);
+        i+=PGSIZE as u32;
+    }
 }
