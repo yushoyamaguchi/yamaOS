@@ -150,6 +150,8 @@ pub fn mem_init(){
     cr0_val&= !(CR0_TS|CR0_EM);
     lcr0(cr0_val);
 
+    check_page_install_pgdir();
+
 
 }
 
@@ -291,6 +293,24 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
     }
 }
 
+fn page_insert(pgdir: *mut PdeT, pp: *mut PageInfo, va: u32, perm: u32) -> i32 {
+    let pte=pgdir_walk(pgdir,va,true);
+    if pte==null_mut(){
+        return -1;
+    }
+    unsafe{
+        if (*pte & PTE_P) != 0{
+            if pa2page(*pte as u32) == pp{
+                *pte=page2pa(pp) | perm | PTE_P;
+                return 0;
+            }
+            page_remove(pgdir,va);
+        }
+        *pte=page2pa(pp) | perm | PTE_P;
+        return 0;
+    }
+}
+
 fn page_lookup(pgdir: *mut PdeT, va: u32,pte_store: *mut *mut PteT) -> *mut PageInfo {
     let pte=pgdir_walk(pgdir,va,false);
     if pte==null_mut() || (unsafe{*pte} & PTE_P)==0{
@@ -319,7 +339,7 @@ fn page_remove(pgdir: *mut PdeT, va: u32) {
 }
 
 fn tlb_invalidate( va: u32){
-    invlpg(va as *const u32);
+    invlpg(va as *mut u8);
 
 }
 
@@ -485,5 +505,12 @@ fn check_kern_pgdir() {
         }
               
     }
+}
+
+fn check_page_install_pgdir(){
+    let pp1:*mut PageInfo=null_mut();
+    memset(page2kva(pp1) as *mut u8, 1, PGSIZE);
+    page_insert(unsafe{KERN_PGDIR}, pp1, PGSIZE as u32, PTE_W);
+    assert!(unsafe{(*(pp1)).pp_ref} == 1);
 }
 

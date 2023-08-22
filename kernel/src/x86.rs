@@ -40,8 +40,12 @@ pub fn rcr0() -> u32 {
     val
 }
 
-pub fn invlpg(addr: *const u32) {
+pub fn invlpg(addr: *mut u8) {
     unsafe {
-        asm!("invlpg [{}]", in(reg) addr, options(att_syntax, nomem, nostack));
+        asm!(
+            "invlpg [{}]",
+            in(reg) addr,
+            options(att_syntax, nostack, preserves_flags)
+        );
     }
 }
