@@ -1,9 +1,12 @@
 use core::fmt;
+use crate::memlayout::KERNBASE;
 use crate::x86::*;
 use crate::console::*;
 
 const VGA_BUFFER_WIDTH: usize = 80;
 const VGA_BUFFER_HIGHT: usize = 25;
+
+const VGA_BUFFER_ADDR: usize=0xb8000 +KERNBASE;
 
 pub static mut VGA_BUFFER: VGABuffer = VGABuffer {
     buffer: [[
@@ -151,7 +154,7 @@ impl VGABuffer{
     }
 
     pub fn flush(&mut self) -> () { // Output the contents of the structure to the screen through VGA
-        let vga_text_buffer = 0xb8000 as *mut u8;
+        let vga_text_buffer = VGA_BUFFER_ADDR as *mut u8;
         for y in 0..VGA_BUFFER_HIGHT {
             for x in 0..VGA_BUFFER_WIDTH {
                 unsafe {

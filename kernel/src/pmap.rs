@@ -142,7 +142,7 @@ pub fn mem_init(){
         boot_map_region(KERN_PGDIR as *mut u32, KERNBASE as u32, (!KERNBASE) +1 , 0, PTE_W );
     }
     check_kern_pgdir();
-    //lcr3(paddr(unsafe { KERN_PGDIR } as u32));
+    lcr3(paddr(unsafe { KERN_PGDIR } as u32));
 
 }
 
