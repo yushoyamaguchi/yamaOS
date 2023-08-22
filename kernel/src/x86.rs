@@ -25,3 +25,23 @@ pub fn lcr3(val: u32) {
         asm!("movl {}, %cr3", in(reg) val, options(att_syntax));
     }
 }
+
+pub fn lcr0(val: u32) {
+    unsafe{
+        asm!("movl {}, %cr0", in(reg) val, options(att_syntax));
+    }
+}
+
+pub fn rcr0() -> u32 {
+    let mut val: u32;
+    unsafe{
+        asm!("movl %cr0, {}", out(reg) val, options(att_syntax));
+    }
+    val
+}
+
+pub fn invlpg(addr: *const u32) {
+    unsafe {
+        asm!("invlpg [{}]", in(reg) addr, options(att_syntax, nomem, nostack));
+    }
+}

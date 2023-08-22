@@ -1,4 +1,5 @@
 use core::mem::size_of;
+use core::ptr::null;
 use core::ptr::null_mut;
 use core::cmp::min;
 
@@ -144,6 +145,12 @@ pub fn mem_init(){
     check_kern_pgdir();
     lcr3(paddr(unsafe { KERN_PGDIR } as u32));
 
+    let mut cr0_val=rcr0();
+    cr0_val|=CR0_PE|CR0_PG|CR0_AM|CR0_WP|CR0_NE|CR0_MP;
+    cr0_val&= !(CR0_TS|CR0_EM);
+    lcr0(cr0_val);
+
+
 }
 
 
@@ -284,7 +291,37 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
     }
 }
 
+fn page_lookup(pgdir: *mut PdeT, va: u32,pte_store: *mut *mut PteT) -> *mut PageInfo {
+    let pte=pgdir_walk(pgdir,va,false);
+    if pte==null_mut() || (unsafe{*pte} & PTE_P)==0{
+        return null_mut();
+    }
+    else {
+        if pte_store != null_mut(){
+            unsafe{
+                *pte_store=pte;
+            }
+        }
+        return pa2page(unsafe{*pte} as u32);
+    }
+    null_mut()
 
+}
+
+fn page_remove(pgdir: *mut PdeT, va: u32) {
+    let mut the_pgtable_entry=null_mut();
+    let pp=page_lookup(pgdir,va,&mut the_pgtable_entry);
+    if pp!=null_mut() {
+        unsafe{ *the_pgtable_entry=0;}
+        page_decref(pp);
+        tlb_invalidate(va);
+    }
+}
+
+fn tlb_invalidate( va: u32){
+    invlpg(va as *const u32);
+
+}
 
 fn relocate_page_free_list(only_lowmem: bool){
     let mut pp: *mut PageInfo;
@@ -449,3 +486,4 @@ fn check_kern_pgdir() {
               
     }
 }
+

@@ -10,6 +10,20 @@ pub const PTE_W: u32 = 0x002; // Writeable
 pub const PTE_U: u32 = 0x004; // User
 pub const PTE_PS: u32 = 0x080; // Page Size
 
+//controle register flags
+pub const CR0_PE: u32 = 0x00000001;  // Protection Enable
+pub const CR0_MP: u32 = 0x00000002;  // Monitor coProcessor
+pub const CR0_EM: u32 = 0x00000004;  // Emulation
+pub const CR0_TS: u32 = 0x00000008;  // Task Switched
+pub const CR0_ET: u32 = 0x00000010;  // Extension Type
+pub const CR0_NE: u32 = 0x00000020;  // Numeric Error
+pub const CR0_WP: u32 = 0x00010000;  // Write Protect
+pub const CR0_AM: u32 = 0x00040000;  // Alignment Mask
+pub const CR0_NW: u32 = 0x20000000;  // Not Writethrough
+pub const CR0_CD: u32 = 0x40000000;  // Cache Disable
+pub const CR0_PG: u32 = 0x80000000;  // Paging
+
+
 pub const PGSIZE: usize = 4096; // bytes mapped by a page
 pub const PGSHIFT: usize = 12; // log2(PGSIZE)
 
