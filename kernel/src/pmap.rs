@@ -150,7 +150,7 @@ pub fn mem_init(){
     cr0_val&= !(CR0_TS|CR0_EM);
     lcr0(cr0_val);
 
-    //check_page_install_pgdir();
+    check_page_install_pgdir();
 
 
 }
@@ -275,12 +275,12 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
         }
     } else if create {
         unsafe{
-            let mut new_pgtable_pp=page_alloc(ALLOC_ZERO) ;
+            let new_pgtable_pp=page_alloc(ALLOC_ZERO) ;
             if new_pgtable_pp == null_mut(){
                 printk!("pgdir_walk: page_alloc failed");
                 return null_mut();
             }
-            (*new_pgtable_pp).pp_ref+=1;
+            (*new_pgtable_pp).pp_ref=1;
             let new_pgtable_pa:PhysaddrT=page2pa(new_pgtable_pp) as PhysaddrT;
             pgdir_slice[pdx]=new_pgtable_pa as u32 | PTE_P | PTE_W | PTE_U;
             let new_pgtable_va=kaddr(new_pgtable_pa as u32) as *mut u32;
@@ -295,6 +295,7 @@ fn pgdir_walk(pgdir: *mut u32, va: u32, create:bool) -> *mut u32 {
 
 fn page_insert(pgdir: *mut PdeT, pp: *mut PageInfo, va: u32, perm: u32) -> i32 {
     let pte=pgdir_walk(pgdir,va,true);
+    let kern_pgdir_slice = unsafe { core::slice::from_raw_parts_mut(pgdir, NPDENTRIES) };
     if pte==null_mut(){
         return -1;
     }
@@ -307,6 +308,7 @@ fn page_insert(pgdir: *mut PdeT, pp: *mut PageInfo, va: u32, perm: u32) -> i32 {
             page_remove(pgdir,va);
         }
         *pte=page2pa(pp) | perm | PTE_P;
+        (*pp).pp_ref+=1;
         return 0;
     }
 }
@@ -507,9 +509,23 @@ fn check_kern_pgdir() {
 }
 
 fn check_page_install_pgdir(){
-    let pp1:*mut PageInfo=null_mut();
+    let pp0:*mut PageInfo=page_alloc(0);
+    let pp1:*mut PageInfo=page_alloc(0);
+    let kern_pgdir_slice    = unsafe { core::slice::from_raw_parts_mut(KERN_PGDIR, NPDENTRIES) };
     memset(page2kva(pp1) as *mut u8, 1, PGSIZE);
+    page_free(pp0);
     page_insert(unsafe{KERN_PGDIR}, pp1, PGSIZE as u32, PTE_W);
-    assert!(unsafe{(*(pp1)).pp_ref} == 1);
+    assert!(unsafe{(*pp1).pp_ref} == 1);
+    assert!( unsafe{*(PGSIZE as *mut u32) == 0x01010101});
+    unsafe{*(PGSIZE as *mut u32) = 0x01010102};
+    assert!(unsafe{*(page2kva(pp1) as *mut u32) == 0x01010102});
+    page_remove(unsafe { KERN_PGDIR }, PGSIZE as u32);
+    assert!(unsafe{(*pp1).pp_ref} == 0);
+
+    assert!(pte_addr(kern_pgdir_slice[0]) == page2pa(pp0)); //If pgdir[0] uses the last free()d area(pp0)
+    kern_pgdir_slice[0] = 0;
+    assert!(unsafe{(*pp0).pp_ref} == 1);
+    unsafe{(*pp0).pp_ref = 0};
+    page_free(pp0);
 }
 
