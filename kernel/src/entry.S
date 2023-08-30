@@ -1,9 +1,11 @@
 .att_syntax prefix
-.equ KERNBASE, 0x80000000
+.equ KERNBASE, 0xF0000000
 .equ CR4_PSE,  0x00000010  # Page size extension
 .equ CR0_WP,     0x00010000  # Write Protect
 .equ CR0_PG,     0x80000000  # Paging
-.equ KSTACKSIZE, 4096*2    # Size of per-process kernel stack
+.equ CR0_PE,     0x00000001  # Protection Enable
+.equ BSTACKSIZE, 4096*9    # Size of per-process kernel stack
+.equ PGSHIFT,    12      # log2(PGSIZE)
 
 .global entry_kernel
 entry_kernel:
@@ -16,10 +18,10 @@ entry_kernel:
     movl    %eax, %cr3
     # Turn on paging.
     movl    %cr0, %eax
-    orl     $(CR0_PG|CR0_WP), %eax
+    orl     $(CR0_PE|CR0_PG|CR0_WP), %eax
     movl    %eax, %cr0
     # Set up the stack pointer.
-    movl    $(stack + KSTACKSIZE), %esp
+    movl    $(bootstacktop), %esp
     # VGA test message
     movl    $0x2f6f2f4c, 0xb8000
     movl    $0x2f642f61, 0xb8004
@@ -29,4 +31,13 @@ entry_kernel:
     jmp     *%eax
 
 
-.comm stack, KSTACKSIZE    
+.data
+###################################################################
+# boot stack
+###################################################################
+	.p2align	PGSHIFT		# force page alignment
+	.globl		bootstack
+bootstack:
+	.space		BSTACKSIZE
+	.globl		bootstacktop   
+bootstacktop:   

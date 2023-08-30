@@ -1,15 +1,18 @@
 use core::fmt;
+use crate::memlayout::KERNBASE;
 use crate::x86::*;
 use crate::console::*;
 
 const VGA_BUFFER_WIDTH: usize = 80;
 const VGA_BUFFER_HIGHT: usize = 25;
 
+const VGA_BUFFER_ADDR: usize=0xb8000 +KERNBASE;
+
 pub static mut VGA_BUFFER: VGABuffer = VGABuffer {
     buffer: [[
         VGACharacter{
             character: b' ',
-            color: (ColorCode::Black as u8) << 4 | ColorCode::Black as u8};
+            color: (ColorCode::DarkGray as u8) << 4 | ColorCode::DarkGray as u8};
         VGA_BUFFER_WIDTH]; VGA_BUFFER_HIGHT],
     x_pos: 0,
     y_pos: 0,
@@ -90,7 +93,7 @@ impl VGABuffer{
     }
 
     pub fn clear_line(&mut self, line: usize) {
-        let blank = VGACharacter::new(b' ', ColorCode::Black, ColorCode::Black);
+        let blank = VGACharacter::new(b' ', ColorCode::DarkGray, ColorCode::DarkGray);
         for x in 0..VGA_BUFFER_WIDTH {
             self.buffer[line][x] = blank;
         }
@@ -99,7 +102,7 @@ impl VGABuffer{
     pub fn delete_last_char(&mut self) {
         if self.x_pos>0 {
             self.x_pos -= 1;
-            self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(b' ', ColorCode::White, ColorCode::Black);
+            self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(b' ', ColorCode::White, ColorCode::DarkGray);
         }
     }
 
@@ -111,12 +114,12 @@ impl VGABuffer{
             }
             byte => {
                 if self.x_pos<VGA_BUFFER_WIDTH {
-                    self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::Black);
+                    self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::DarkGray);
                     self.x_pos += 1;
                 }
                 else {
                     self.new_line();
-                    self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::Black);
+                    self.buffer[self.y_pos][self.x_pos] = VGACharacter::new(byte, ColorCode::White, ColorCode::DarkGray);
                     self.x_pos += 1;
                 }
             }
@@ -137,7 +140,7 @@ impl VGABuffer{
     pub fn clear(&mut self) -> () {
         for y in 0..VGA_BUFFER_HIGHT {
             for x in 0..VGA_BUFFER_WIDTH {
-                self.buffer[y][x] = VGACharacter::new(b' ', ColorCode::Black, ColorCode::Black);
+                self.buffer[y][x] = VGACharacter::new(b' ', ColorCode::DarkGray, ColorCode::DarkGray);
             }
         }
         self.x_pos = 0;
@@ -151,7 +154,7 @@ impl VGABuffer{
     }
 
     pub fn flush(&mut self) -> () { // Output the contents of the structure to the screen through VGA
-        let vga_text_buffer = 0xb8000 as *mut u8;
+        let vga_text_buffer = VGA_BUFFER_ADDR as *mut u8;
         for y in 0..VGA_BUFFER_HIGHT {
             for x in 0..VGA_BUFFER_WIDTH {
                 unsafe {
