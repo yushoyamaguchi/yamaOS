@@ -1,4 +1,3 @@
-use crate::drivers::kbc;
 use crate::drivers::vga::*;
 use crate::drivers::kbc::*;
 use crate::drivers::uart::*;

@@ -19,3 +19,33 @@ pub fn outb(port: u16, value: u8) {
             options(att_syntax))
     }
 }
+
+pub fn lcr3(val: u32) {
+    unsafe{
+        asm!("movl {}, %cr3", in(reg) val, options(att_syntax));
+    }
+}
+
+pub fn lcr0(val: u32) {
+    unsafe{
+        asm!("movl {}, %cr0", in(reg) val, options(att_syntax));
+    }
+}
+
+pub fn rcr0() -> u32 {
+    let mut val: u32;
+    unsafe{
+        asm!("movl %cr0, {}", out(reg) val, options(att_syntax));
+    }
+    val
+}
+
+pub fn invlpg(addr: *mut u8) {
+    unsafe {
+        asm!(
+            "invlpg ({})",
+            in(reg) addr,
+            options(att_syntax, nostack, preserves_flags)
+        );
+    }
+}
