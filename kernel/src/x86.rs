@@ -43,7 +43,7 @@ pub fn rcr0() -> u32 {
 pub fn invlpg(addr: *mut u8) {
     unsafe {
         asm!(
-            "invlpg [{}]",
+            "invlpg ({})",
             in(reg) addr,
             options(att_syntax, nostack, preserves_flags)
         );

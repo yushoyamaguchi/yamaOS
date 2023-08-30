@@ -150,7 +150,7 @@ pub fn mem_init(){
     cr0_val&= !(CR0_TS|CR0_EM);
     lcr0(cr0_val);
 
-    check_page_install_pgdir();
+    //check_page_install_pgdir();
 
 
 }
@@ -340,7 +340,6 @@ fn page_remove(pgdir: *mut PdeT, va: u32) {
 
 fn tlb_invalidate( va: u32){
     invlpg(va as *mut u8);
-
 }
 
 fn relocate_page_free_list(only_lowmem: bool){
