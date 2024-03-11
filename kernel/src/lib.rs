@@ -33,7 +33,7 @@ macro_rules! assigned_array {
 
 #[panic_handler]
 #[no_mangle]
-pub extern "C" fn panic(_info: &PanicInfo) -> ! {
+pub fn panic(_info: &PanicInfo) -> ! {
     printk!("{}", _info);
     loop {}
 }

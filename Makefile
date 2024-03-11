@@ -43,7 +43,7 @@ run: $(ISO)
 $(ISO): $(OS_OBJ) $(GRUB_CFG)
 	mkdir -p $(BUILD_DIR)/boot/grub
 	cp $(GRUB_CFG) $(BUILD_DIR)/boot/grub/
-	grub-mkrescue --verbose -o $(ISO) $(BUILD_DIR) 2> /dev/null
+	grub2-mkrescue --verbose -o $(ISO) $(BUILD_DIR) 2> /dev/null
 $(OS_OBJ): $(LOADER_OBJS) $(KERNEL_OBJS) $(LD_SCRIPT)
 	mkdir -p $(BUILD_DIR)/boot
 	ld $(LD_FLAG) -T $(LD_SCRIPT) $(LOADER_OBJS) $(KERNEL_OBJS) -o $(OS_OBJ)
